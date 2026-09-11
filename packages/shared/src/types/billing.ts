@@ -2,6 +2,9 @@
 
 export type BillingStatus = 'pending' | 'active' | 'past_due' | 'canceled';
 
+/** Bande ACV devis signé (10 / 20 / 30 k€/an) — pas un price picker freemium. */
+export type AcvTier = '10k' | '20k' | '30k';
+
 /** Snapshot billing persisté sur l'org (DomainStore / orgs). */
 export interface OrgBilling {
   orgId: string;
@@ -23,6 +26,8 @@ export interface BillingStatusResponse {
 }
 
 export interface CreateCheckoutRequest {
+  /** Bande ACV du devis signé (sales-led) */
+  acvTier: AcvTier;
   /** Inclure fee onboarding one-shot (5–15 k€) — US-BILL02 */
   includeOnboardingFee?: boolean;
   /** Montant fee onboarding en centimes EUR (optionnel ; défaut STRIPE_ONBOARDING_FEE_CENTS) */

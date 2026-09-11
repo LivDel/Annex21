@@ -82,6 +82,7 @@ export type { AuditAction, AuditEvent } from './types/audit';
 
 export type {
   BillingStatus,
+  AcvTier,
   OrgBilling,
   BillingStatusResponse,
   CreateCheckoutRequest,
