@@ -4,6 +4,8 @@ import type {
   Incident,
   Nis2Assessment,
   PlaybookTemplate,
+  TrustCenterView,
+  TrustDraftPatch,
 } from '@annex21/shared';
 import {
   assessments,
@@ -11,6 +13,7 @@ import {
   controls,
   incidents,
   playbookTemplates,
+  trustCenters,
 } from '../common/in-memory.store';
 import type {
   AppendAuditInput,
@@ -112,6 +115,37 @@ export class MemoryDomainStore implements DomainStore {
     if (idx >= 0) incidents[idx] = row;
     else incidents.push(row);
     return row;
+  }
+
+
+  async getTrustBySlug(orgSlug: string): Promise<TrustCenterView | null> {
+    const row = trustCenters.find((t) => t.org.slug === orgSlug);
+    return row ? structuredClone(row) : null;
+  }
+
+  async saveTrust(row: TrustCenterView): Promise<TrustCenterView> {
+    const idx = trustCenters.findIndex((t) => t.org.slug === row.org.slug);
+    const next = { ...row, updatedAt: new Date().toISOString() };
+    if (idx >= 0) trustCenters[idx] = next;
+    else trustCenters.push(next);
+    return structuredClone(next);
+  }
+
+  async patchTrustDraft(
+    orgSlug: string,
+    patch: TrustDraftPatch,
+  ): Promise<TrustCenterView | null> {
+    const row = trustCenters.find((t) => t.org.slug === orgSlug);
+    if (!row) return null;
+    if (patch.orgName !== undefined) row.org.name = patch.orgName;
+    if (patch.country !== undefined) row.org.country = patch.country;
+    if (patch.locale !== undefined) row.locale = patch.locale;
+    if (patch.disclaimerAck !== undefined) row.disclaimerAck = patch.disclaimerAck;
+    if (patch.unpublishedNotes !== undefined) {
+      row.unpublishedNotes = patch.unpublishedNotes || undefined;
+    }
+    row.updatedAt = new Date().toISOString();
+    return structuredClone(row);
   }
 
   async appendAudit(input: AppendAuditInput): Promise<AuditEvent> {

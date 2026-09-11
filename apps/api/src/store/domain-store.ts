@@ -11,6 +11,8 @@ import type {
   AssessmentGap,
   ScopeStatus,
   Nis2Domain,
+  TrustCenterView,
+  TrustDraftPatch,
 } from '@annex21/shared';
 
 export const DOMAIN_STORE = Symbol('DOMAIN_STORE');
@@ -49,8 +51,9 @@ export interface UpdateControlInput {
 }
 
 /**
- * Thin repository for assessment / controls / playbooks / incidents / audit.
+ * Thin repository for assessment / controls / playbooks / incidents / trust / audit.
  * Postgres when available; in-memory fallback for local/dev.
+ * Trust drafts never leak to public routes (RG-07) — filtering is service-layer.
  */
 export interface DomainStore {
   readonly mode: StoreMode;
@@ -71,6 +74,13 @@ export interface DomainStore {
   getIncident(id: string): Promise<Incident | null>;
   createIncident(row: Incident): Promise<Incident>;
   saveIncident(row: Incident): Promise<Incident>;
+
+  getTrustBySlug(orgSlug: string): Promise<TrustCenterView | null>;
+  saveTrust(row: TrustCenterView): Promise<TrustCenterView>;
+  patchTrustDraft(
+    orgSlug: string,
+    patch: TrustDraftPatch,
+  ): Promise<TrustCenterView | null>;
 
   appendAudit(input: AppendAuditInput): Promise<AuditEvent>;
   listAudit(orgId?: string, limit?: number): Promise<AuditEvent[]>;
