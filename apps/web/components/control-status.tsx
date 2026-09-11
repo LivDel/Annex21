@@ -3,7 +3,7 @@ import type { TrustControlStatus } from '@annex21/shared';
 const LABELS: Record<TrustControlStatus, { label: string; className: string }> = {
   attested: { label: 'Attesté', className: 'status-attested' },
   in_progress: { label: 'En cours', className: 'status-progress' },
-  preparing: { label: 'Profil en préparation', className: 'status-preparing' },
+  preparing: { label: 'En préparation', className: 'status-preparing' },
 };
 
 export function ControlStatus({ status }: { status: TrustControlStatus }) {
