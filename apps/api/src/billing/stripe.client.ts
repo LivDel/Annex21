@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
 
+export type AcvTier = '10k' | '20k' | '30k';
+
 /**
  * Stripe client factory — instantiate Stripe (not global Stripe.apiKey).
  * Secrets EU only: STRIPE_SECRET_KEY never reaches NEXT_PUBLIC_*.
@@ -15,14 +17,35 @@ export function createStripeClient(): Stripe {
   return new Stripe(key);
 }
 
-export function stripePriceId(): string {
-  const id =
-    process.env.STRIPE_PRICE_ID?.trim() ||
-    process.env.STRIPE_PRODUCT_PRICE_ID?.trim();
+/**
+ * Resolve Stripe Price id for ACV band (sales-led devis 10 / 20 / 30 k€).
+ */
+export function stripeAcvPriceId(tier: AcvTier): string {
+  const envKey =
+    tier === '10k'
+      ? 'STRIPE_PRICE_ID_10K'
+      : tier === '20k'
+        ? 'STRIPE_PRICE_ID_20K'
+        : 'STRIPE_PRICE_ID_30K';
+  const id = process.env[envKey]?.trim();
   if (!id) {
-    throw new Error('STRIPE_PRICE_ID manquant (ACV annuel EUR)');
+    throw new Error(`${envKey} manquant (ACV devis ${tier} EUR)`);
   }
   return id;
+}
+
+/**
+ * @deprecated Use stripeAcvPriceId(tier). Single STRIPE_PRICE_ID is removed.
+ */
+export function stripePriceId(): never {
+  throw new Error(
+    'STRIPE_PRICE_ID unique est déprécié — utiliser stripeAcvPriceId(acvTier) + STRIPE_PRICE_ID_10K/20K/30K',
+  );
+}
+
+/** Optional one-shot onboarding Price id (preferred over price_data). */
+export function stripeOnboardingPriceId(): string | null {
+  return process.env.STRIPE_PRICE_ID_ONBOARDING?.trim() || null;
 }
 
 export function stripeWebhookSecret(): string {

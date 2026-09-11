@@ -27,6 +27,7 @@ export class BillingController {
   checkout(@Body() dto: CreateCheckoutDto, @Req() req: AuthedRequest) {
     const orgId = req.session?.orgId || 'org_acme';
     return this.billing.createCheckoutSession(orgId, {
+      acvTier: dto.acvTier,
       includeOnboardingFee: dto.includeOnboardingFee,
       onboardingFeeCents: dto.onboardingFeeCents,
       actorUserId: req.user?.id,
