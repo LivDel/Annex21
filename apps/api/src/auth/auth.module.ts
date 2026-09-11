@@ -7,6 +7,7 @@ import {
 } from './email/magic-link-email.interface';
 import { BrevoHttpEmailService } from './email/brevo-http.email';
 import { MagicLinkEmailServiceDev } from './email/dev-stub.email';
+import { OrgsModule } from '../orgs/orgs.module';
 
 function emailProvider(): MagicLinkEmailService {
   const configured = Boolean(
@@ -19,6 +20,7 @@ function emailProvider(): MagicLinkEmailService {
 }
 
 @Module({
+  imports: [OrgsModule],
   controllers: [AuthController],
   providers: [
     AuthService,

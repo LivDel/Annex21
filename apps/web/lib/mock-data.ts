@@ -35,13 +35,20 @@ export const MOCK_TRUST_PREVIEW: Record<string, TrustCenterView> = {
   ...Object.fromEntries(
     Object.entries(MOCK_PUBLIC_TRUST).map(([slug, pub]) => [
       slug,
-      { ...pub, status: 'published' as const } satisfies TrustCenterView,
+      {
+        ...pub,
+        orgId: `org_${slug}`,
+        status: 'published' as const,
+        disclaimerAck: true,
+      } satisfies TrustCenterView,
     ]),
   ),
   'demo-draft': {
+    orgId: 'org_demo_draft',
     org: { slug: 'demo-draft', name: 'Nordic MSP (démo brouillon)', country: 'DE' },
     status: 'draft',
     locale: 'fr',
+    disclaimerAck: false,
     unpublishedNotes: 'En cours de revue CISO — ne pas exposer aux acheteurs.',
     controls: [
       { id: 'c1', domain: 'Gouvernance & politiques', status: 'in_progress' },
