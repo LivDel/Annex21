@@ -22,6 +22,7 @@
   --danger: #b91c1c;
   --warn: #f59e0b;
   --ok: #10b981;
+  --shadow-glow-soft: 0 0 48px rgba(29, 78, 216, 0.18);
 
   /* aliases used by existing utility classes */
   --void-950: #05080f;
@@ -43,11 +44,20 @@ body {
 }
 
 .surface-void {
-  /* Void soft — pas d'orbes circulaires (Julien). 1–2 dégradés elliptiques très softs. */
+  /* Void soft UX GO — dégradés elliptiques encore plus légers, pas d'orbes circulaires. */
   background-color: var(--void);
   background-image:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(29, 78, 216, 0.18), transparent 55%),
-    radial-gradient(ellipse 90% 60% at 100% 100%, rgba(14, 165, 164, 0.08), transparent 50%);
+    radial-gradient(ellipse 130% 90% at 50% -25%, rgba(29, 78, 216, 0.09), transparent 58%),
+    radial-gradient(ellipse 100% 70% at 100% 100%, rgba(14, 165, 164, 0.04), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* App shell assessment/playbooks — wash encore plus discret (Figma page 14:2). */
+.surface-void-app {
+  background-color: var(--void);
+  background-image:
+    radial-gradient(ellipse 140% 100% at 40% -30%, rgba(29, 78, 216, 0.06), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 95% 90%, rgba(14, 165, 164, 0.03), transparent 55%);
   background-attachment: fixed;
 }
 
@@ -65,7 +75,7 @@ body {
 
 .aurora-orb {
   /* Deprecated decorative ball — soft wash only if still referenced */
-  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(91, 140, 255, 0.2), transparent 70%);
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(91, 140, 255, 0.08), transparent 70%);
   filter: blur(8px);
   box-shadow: none;
 }

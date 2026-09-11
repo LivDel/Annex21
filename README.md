@@ -85,6 +85,9 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | `/app/login/check-email` | Confirmation générique (anti-énumération) |
 | `/app/onboarding` | Étape 1/2 — organisation (secteur NIS2, rôle CISO) |
 | `/app` | Étape 2/2 — org picker stub + grille connecteurs (5 états) |
+| `/app/assessment` | Assessment NIS2 — empty / brouillon / résultat + gaps + contrôles |
+| `/app/playbooks` | Templates FR-ANSSI + ouverture incident |
+| `/app/incidents` | Bannière SLA live, étapes, liaison preuves stub |
 | `/app/*` | Assessment, Playbooks ANSSI, Evidence, Trust editor |
 
 Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouillon).
@@ -103,15 +106,21 @@ Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouill
 | `GET/POST` | `/evidence`, `/evidence/:id` | **Privé uniquement** |
 | `GET/POST` | `/orgs`, `/orgs/:slug` | Organisations |
 | `GET/POST` | `/connectors…` | Connecteurs MVP |
+| `GET/POST/PATCH` | `/assessments`, `/assessments/:id`, `/assessments/:id/complete` | Assessment NIS2 (privé, disclaimer_ack) |
+| `GET/PATCH` | `/controls`, `/controls/:id` | Statuts contrôles org |
+| `GET` | `/playbooks/templates` | Templates FR-ANSSI immutables |
+| `GET/POST` | `/incidents…` | Open / complete step / link evidence / close + `GET /incidents/sla` |
+| `GET` | `/audit-events` | Journal append-only |
+
 
 ## Structure
 
 ```
 annex21/
 ├── apps/web          Next.js 15 App Router + Tailwind
-├── apps/api          NestJS (AuthModule, SessionModule, ConnectorsModule…)
-├── packages/shared   Types / DTOs (Trust, Org, Evidence, Session, Connector)
-├── infra/            docker-compose (postgres, redis, minio)
+├── apps/api          NestJS (Auth, Connectors, Assessments, Incidents…)
+├── packages/shared   Types / DTOs (Trust, Assessment, Playbook, Incident…)
+├── infra/            docker-compose + migrations SQL (assessment/playbooks)
 ├── brand/            Identité visuelle
 └── CDC-fonctionnel.md
 ```
@@ -122,6 +131,26 @@ annex21/
 - **RG-08** pas de preuves brutes sur le Trust public (DTO `PublicTrustCenter` sans evidence).
 - **RG-10** data in-EU (compose + README + commentaires API).
 - V1 = NIS2 hors finance : aucun claim DORA dans l’UI.
+
+
+## Assessment + Playbooks (V1)
+
+### Figma overlays (Assessment + Playbooks)
+
+Frames Maquettiste : `screenshots/assessment-playbooks/` (file [Azjl81f8…](https://www.figma.com/design/Azjl81f8lWazR4mbgOovSW)).
+Attributs `data-luix-frame` / `data-figma-node` sur empty / skeleton / résultat / gap / playbook / SLA / evidence pour overlay ultérieur.
+UX Chef : `requires_evidence` → « Marquer fait » **disabled** + erreur inline ; preuve optionnelle = warning soft non bloquant.
+
+
+
+- **Privé uniquement** (`AppAuthGuard` / SessionGuard) — jamais sur `/public/trust` ni `/trust/[org]` (RG-07/08).
+- Assessment : CRUD brouillon + `POST …/complete` (scoring simplifié, `disclaimer_ack` obligatoire).
+- Contrôles org : list / update status.
+- Playbooks : `GET /playbooks/templates` (FR-ANSSI 24h/72h/1 mois, jsonb immutable).
+- Incidents : open → complete step (REJECTED si `requires_evidence` sans preuve) → close ; SLA countdown `GET /incidents/sla`.
+- `audit_events` append-only sur mutations clés.
+- Migration SQL : `infra/migrations/001_assessment_playbooks.sql` (Postgres in-EU). Store in-memory MVP en API jusqu’au branchement Postgres.
+- Hors V1 : DORA, DE BSI, TPRM, Trust publish auto, cron alerts, PDF export.
 
 ## Licence
 

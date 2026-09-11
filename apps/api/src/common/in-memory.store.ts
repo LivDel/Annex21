@@ -1,12 +1,18 @@
 import type {
+  AuditEvent,
+  Control,
   Evidence,
+  Incident,
+  Nis2Assessment,
   Organization,
+  PlaybookTemplate,
   TrustCenterView,
 } from '@annex21/shared';
 
 /**
  * Store in-memory MVP (remplacé par Postgres in-EU en durcissement).
  * Seed aligné sur les maquettes : Acme Industrie SAS.
+ * Assessment / incidents / evidence : jamais montés sur /public/trust (RG-07/08).
  */
 const now = '2026-09-11T10:00:00.000Z';
 
@@ -89,3 +95,157 @@ export const evidenceItems: Evidence[] = [
     storageKey: 'eu/org_acme/ev_2/idp-mfa-export.json',
   },
 ];
+
+/** Contrôles org (statut opérationnel — distinct des TrustControlSummary publics). */
+export const controls: Control[] = [
+  {
+    id: 'ctrl_gov_01',
+    orgId: 'org_acme',
+    code: 'NIS2-GOV-01',
+    domain: 'Gouvernance & politiques',
+    title: 'Politique SSI documentée et approuvée',
+    status: 'implemented',
+    owner: 'J. Martin',
+    updatedAt: now,
+  },
+  {
+    id: 'ctrl_risk_01',
+    orgId: 'org_acme',
+    code: 'NIS2-RISK-01',
+    domain: 'Gestion des risques',
+    title: 'Registre des risques cyber à jour',
+    status: 'in_progress',
+    owner: 'Contributor',
+    dueAt: '2026-10-01T00:00:00.000Z',
+    updatedAt: now,
+  },
+  {
+    id: 'ctrl_bc_01',
+    orgId: 'org_acme',
+    code: 'NIS2-BC-01',
+    domain: "Continuité d'activité",
+    title: 'Plan PCA testé annuellement',
+    status: 'not_started',
+    dueAt: '2026-11-15T00:00:00.000Z',
+    updatedAt: now,
+  },
+  {
+    id: 'ctrl_inc_01',
+    orgId: 'org_acme',
+    code: 'NIS2-INC-01',
+    domain: 'Réponse aux incidents',
+    title: 'Playbook ANSSI opérationnel',
+    status: 'implemented',
+    owner: 'J. Martin',
+    updatedAt: now,
+  },
+  {
+    id: 'ctrl_sc_01',
+    orgId: 'org_acme',
+    code: 'NIS2-SC-01',
+    domain: "Chaîne d'approvisionnement",
+    title: 'Clauses NIS2 fournisseurs critiques',
+    status: 'not_started',
+    updatedAt: now,
+  },
+  {
+    id: 'ctrl_train_01',
+    orgId: 'org_acme',
+    code: 'NIS2-TRAIN-01',
+    domain: 'Formation & sensibilisation',
+    title: 'Campagne phishing annuelle',
+    status: 'in_progress',
+    owner: 'Contributor',
+    updatedAt: now,
+  },
+];
+
+/** Template FR-ANSSI immutable (24h / 72h / 1 mois). */
+export const playbookTemplates: PlaybookTemplate[] = [
+  {
+    id: 'pb_fr_anssi_v1',
+    version: '1.0.0',
+    name: 'FR-ANSSI notification incident',
+    createdAt: now,
+    body: {
+      authority: 'ANSSI',
+      locale: 'fr',
+      label: 'Notification incident — délais ANSSI',
+      windows: ['24h', '72h', '1m'],
+      steps: [
+        {
+          id: 's_detect',
+          sortOrder: 1,
+          window: '24h',
+          title: 'Détecter et enregistrer',
+          description: 'Ouvrir le ticket, horodater la détection, qualifier le périmètre initial.',
+          ownerRole: 'contributor',
+          requiresEvidence: false,
+        },
+        {
+          id: 's_qualify',
+          sortOrder: 2,
+          window: '24h',
+          title: 'Qualifier criticité / impact',
+          description: 'Évaluer impact métier, données, clients. Joindre fiche de qualification.',
+          ownerRole: 'owner',
+          requiresEvidence: true,
+        },
+        {
+          id: 's_notify_internal',
+          sortOrder: 3,
+          window: '24h',
+          title: 'Notifier en interne (CISO / DG)',
+          description: 'Alerter la chaîne de commandement et activer la cellule de crise si besoin.',
+          ownerRole: 'contributor',
+          requiresEvidence: false,
+        },
+        {
+          id: 's_notify_anssi',
+          sortOrder: 4,
+          window: '72h',
+          title: 'Notifier ANSSI / autorités',
+          description: 'Dépôt notification initiale auprès de l’autorité compétente (preuve = accusé).',
+          ownerRole: 'owner',
+          requiresEvidence: true,
+        },
+        {
+          id: 's_contain',
+          sortOrder: 5,
+          window: '72h',
+          title: 'Contenir la menace',
+          description: 'Actions de confinement, isolation, rotation secrets — preuve des mesures.',
+          ownerRole: 'contributor',
+          requiresEvidence: true,
+        },
+        {
+          id: 's_report',
+          sortOrder: 6,
+          window: '1m',
+          title: 'Rapport détaillé & leçons apprises',
+          description: 'Rapport final, chronologie, mesures correctives, REX.',
+          ownerRole: 'owner',
+          requiresEvidence: true,
+        },
+        {
+          id: 's_close_pack',
+          sortOrder: 7,
+          window: '1m',
+          title: 'Clôturer le dossier notification',
+          description: 'Valider le pack audit-ready (étapes + preuves) avant clôture incident.',
+          ownerRole: 'owner',
+          requiresEvidence: true,
+        },
+      ],
+    },
+  },
+];
+
+/** Assessments en mémoire (vide au boot — créés via API). */
+export const assessments: Nis2Assessment[] = [];
+
+/** Incidents ouverts / clos. */
+export const incidents: Incident[] = [];
+
+/** Audit append-only. */
+export const auditEvents: AuditEvent[] = [];
