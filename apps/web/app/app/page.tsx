@@ -11,14 +11,20 @@ const ORGS = [
 
 export default function AppHomePage() {
   return (
-    <AppShell active="/app/assessment">
+    <AppShell active="/app">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2">
+          <div className="mb-2 inline-flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-annex-blue/40 bg-annex-deep/30 px-2.5 py-0.5 text-[11px] font-semibold text-annex-blue">
               Étape 2/2
             </span>
             <span className="text-xs text-[#CBD5E1]">Brancher les connecteurs</span>
+            <Link
+              href="/app/onboarding"
+              className="text-xs text-annex-blue hover:underline"
+            >
+              ← Étape 1/2 organisation
+            </Link>
           </div>
           <h1 className="text-2xl font-semibold text-[#F8FAFC]">Onboarding preuves</h1>
           <p className="mt-1 text-sm text-[#CBD5E1]">

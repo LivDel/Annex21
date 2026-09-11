@@ -41,7 +41,7 @@ function CheckEmailInner() {
 
   const verifyHref = useMemo(() => {
     if (!devToken) return null;
-    const redirect = `${WEB}/app`;
+    const redirect = `${WEB}/app/onboarding`;
     return `${API}/auth/verify?token=${encodeURIComponent(devToken)}&redirect=${encodeURIComponent(redirect)}`;
   }, [devToken]);
 
