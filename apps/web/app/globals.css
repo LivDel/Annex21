@@ -95,3 +95,25 @@ body {
 .status-preparing {
   @apply text-slate-400 border-slate-500/40 bg-slate-500/10;
 }
+
+/* A11y — focus visible (follow-up post PR #3) */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 3px;
+}
