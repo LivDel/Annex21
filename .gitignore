@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Builds
+dist
+.next
+out
+*.tsbuildinfo
+
+# Env (never commit secrets — use .env.example)
+.env
+.env.local
+.env.*.local
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Turbo
+.turbo
+
+# Test / coverage
+coverage
+
+# MinIO / local volumes
+infra/data

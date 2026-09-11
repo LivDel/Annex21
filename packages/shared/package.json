@@ -1,0 +1,22 @@
+{
+  "name": "@annex21/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Types et DTOs partagés Annex21 (trust, org, evidence)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  }
+}
