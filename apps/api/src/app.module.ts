@@ -7,10 +7,16 @@ import { TrustModule } from './trust/trust.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { OrgsModule } from './orgs/orgs.module';
 import { ConnectorsModule } from './connectors/connectors.module';
+import { AuditModule } from './audit/audit.module';
+import { AssessmentsModule } from './assessments/assessments.module';
+import { ControlsModule } from './controls/controls.module';
+import { PlaybooksModule } from './playbooks/playbooks.module';
+import { IncidentsModule } from './incidents/incidents.module';
 
 /**
  * Module racine Annex21.
  * Data residency EU (RG-10) : ConfigModule ne doit pas pointer vers des stores hors UE.
+ * Assessment / incidents / evidence : uniquement via AppAuthGuard — jamais /public/trust (RG-07).
  */
 @Module({
   imports: [
@@ -22,6 +28,11 @@ import { ConnectorsModule } from './connectors/connectors.module';
     EvidenceModule,
     OrgsModule,
     ConnectorsModule,
+    AuditModule,
+    AssessmentsModule,
+    ControlsModule,
+    PlaybooksModule,
+    IncidentsModule,
   ],
 })
 export class AppModule {}
