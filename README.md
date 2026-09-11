@@ -61,6 +61,9 @@ pnpm install
 # 2. Infra locale (Postgres, Redis, MinIO) — data in-EU
 docker compose -f infra/docker-compose.yml up -d
 
+# 2b. Migration assessment/playbooks (aussi auto au boot API si Postgres up)
+pnpm --filter @annex21/api migrate
+
 # 3. Web (Next.js :3000) + API (NestJS :3001)
 pnpm dev
 ```
@@ -86,6 +89,7 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | `/app/onboarding` | Étape 1/2 — organisation (secteur NIS2, rôle CISO) |
 | `/app` | Étape 2/2 — org picker stub + grille connecteurs (5 états) |
 | `/app/assessment` | Assessment NIS2 — empty / brouillon / résultat + gaps + contrôles |
+| `/app/controls` | Contrôles org — list / update statuts |
 | `/app/playbooks` | Templates FR-ANSSI + ouverture incident |
 | `/app/incidents` | Bannière SLA live, étapes, liaison preuves stub |
 | `/app/*` | Assessment, Playbooks ANSSI, Evidence, Trust editor |
@@ -149,7 +153,9 @@ UX Chef : `requires_evidence` → « Marquer fait » **disabled** + erreur inlin
 - Playbooks : `GET /playbooks/templates` (FR-ANSSI 24h/72h/1 mois, jsonb immutable).
 - Incidents : open → complete step (REJECTED si `requires_evidence` sans preuve) → close ; SLA countdown `GET /incidents/sla`.
 - `audit_events` append-only sur mutations clés.
-- Migration SQL : `infra/migrations/001_assessment_playbooks.sql` (Postgres in-EU). Store in-memory MVP en API jusqu’au branchement Postgres.
+- Store domain (assessments/controls/playbooks/incidents/audit) : **Postgres** si `DATABASE_URL` / `POSTGRES_*` joignable, sinon **in-memory** (dev, warning console).
+- Migration SQL : `infra/migrations/001_assessment_playbooks.sql` — appliquée au boot API, ou `pnpm --filter @annex21/api migrate`.
+- `assertEuResidency()` au boot API (`DATA_RESIDENCY=EU`, refuse régions `us-*`).
 - Hors V1 : DORA, DE BSI, TPRM, Trust publish auto, cron alerts, PDF export.
 
 ## Licence
