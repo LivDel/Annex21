@@ -12,6 +12,7 @@ import type {
 } from '@annex21/shared';
 import { RedisService } from '../session/redis.service';
 import { SessionService } from '../session/session.service';
+import { OrgsService } from '../orgs/orgs.service';
 import {
   MAGIC_LINK_EMAIL,
   type MagicLinkEmailService,
@@ -27,6 +28,7 @@ export class AuthService {
   constructor(
     private readonly redis: RedisService,
     private readonly sessions: SessionService,
+    private readonly orgs: OrgsService,
     @Inject(MAGIC_LINK_EMAIL) private readonly email: MagicLinkEmailService,
   ) {}
 
@@ -102,7 +104,23 @@ export class AuthService {
       role: 'owner',
     };
 
-    const { sessionId } = await this.sessions.create(user);
+    const cachedOrgId = await this.sessions.getUserOrgId(user.id);
+    const completed = await this.orgs.findCompletedForHydration(cachedOrgId);
+    const { sessionId } = await this.sessions.create(
+      user,
+      completed?.onboardingCompletedAt
+        ? {
+            orgId: completed.id,
+            onboardingCompletedAt: completed.onboardingCompletedAt,
+            org: {
+              id: completed.id,
+              name: completed.name,
+              nis2Sector: completed.nis2Sector ?? '',
+              cisoRole: completed.cisoRole ?? 'ciso',
+            },
+          }
+        : undefined,
+    );
 
     return {
       sessionId,
