@@ -15,8 +15,22 @@ export type {
 
 export type { Evidence, EvidenceProvenance } from './types/evidence';
 
+export type { SessionUser, SessionRecord } from './types/session';
+
+export type {
+  ConnectorProvider,
+  ConnectorState,
+  ConnectorErrorCode,
+  ConnectorError,
+  ConnectorSummary,
+  AwsRoleConfig,
+  ConnectorConnectRequest,
+  ConnectorConnectResponse,
+} from './types/connector';
+
 export type {
   RequestMagicLinkDto,
   MagicLinkRequestResponse,
   MagicLinkVerifyResponse,
+  LogoutResponse,
 } from './dto/auth.dto';
