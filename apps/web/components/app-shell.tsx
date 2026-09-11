@@ -25,8 +25,8 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-navy">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-white/10 px-3 py-5">
+    <div className="surface-void flex min-h-screen">
+      <aside className="card-glass flex w-56 shrink-0 flex-col rounded-none border-y-0 border-l-0 border-r border-white/10 px-3 py-5">
         <div className="mb-6 px-2">
           <Logo href="/app" compact />
         </div>

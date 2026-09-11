@@ -6,16 +6,18 @@ const config: Config = {
     extend: {
       colors: {
         navy: {
-          DEFAULT: '#0B1220',
-          800: '#10192c',
-          700: '#121a2e',
-          600: '#1a243c',
+          DEFAULT: 'var(--navy)',
+          950: 'var(--void)',
+          800: 'var(--void-800)',
+          700: 'var(--void-700)',
+          600: 'var(--void-600)',
         },
         annex: {
-          blue: '#5B8CFF',
-          deep: '#1D4ED8',
-          teal: '#0EA5A4',
-          mint: '#2DD4BF',
+          blue: 'var(--glow)',
+          deep: 'var(--primary)',
+          teal: 'var(--teal)',
+          mint: 'var(--teal-bright)',
+          lilac: 'var(--aurora-lilac)',
         },
       },
       fontFamily: {
@@ -23,6 +25,10 @@ const config: Config = {
       },
       boxShadow: {
         glow: '0 0 80px rgba(29, 78, 216, 0.35)',
+        aurora: '0 0 120px rgba(91, 140, 255, 0.28), 0 0 40px rgba(45, 212, 191, 0.12)',
+      },
+      backgroundImage: {
+        'aurora-cta': 'linear-gradient(135deg, var(--primary) 0%, var(--glow) 100%)',
       },
     },
   },

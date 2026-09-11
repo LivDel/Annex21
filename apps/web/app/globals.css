@@ -2,25 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Annex21 Figma v2 — tokens Maquettiste (FIGMA-V2-TOKENS.md)
+ * Landing · Trust · App. RG-07/08 inchangés.
+ */
 :root {
   color-scheme: dark;
+
+  --void: #05080f;
+  --navy: #0b1220;
+  --primary: #1d4ed8;
+  --glow: #5b8cff;
+  --teal: #0ea5a4;
+  --teal-bright: #2dd4bf;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --glass-bg: rgba(248, 250, 252, 0.06);
+  --glass-border: rgba(248, 250, 252, 0.12);
+  --danger: #b91c1c;
+  --warn: #f59e0b;
+  --ok: #10b981;
+
+  /* aliases used by existing utility classes */
+  --void-950: #05080f;
+  --void-900: #0b1220;
+  --void-800: #10192c;
+  --void-700: #121a2e;
+  --void-600: #1a243c;
+  --aurora-blue: var(--glow);
+  --aurora-deep: var(--primary);
+  --aurora-teal: var(--teal);
+  --aurora-mint: var(--teal-bright);
+  --aurora-lilac: #8bb0ff;
 }
 
 html,
 body {
-  background: #0b1220;
-  color: #f8fafc;
+  background: var(--void);
+  color: var(--text);
+}
+
+.surface-void {
+  background-color: var(--void);
+  background-image:
+    radial-gradient(ellipse 80% 55% at 70% -5%, rgba(29, 78, 216, 0.38), transparent 55%),
+    radial-gradient(ellipse 45% 40% at 10% 30%, rgba(14, 165, 164, 0.14), transparent 50%),
+    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(91, 140, 255, 0.1), transparent 55%);
+  background-attachment: fixed;
 }
 
 .hero-glow {
   background:
-    radial-gradient(ellipse 90% 70% at 50% -10%, rgba(29, 78, 216, 0.55) 0%, rgba(14, 165, 164, 0.18) 42%, transparent 70%),
-    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(91, 140, 255, 0.18), transparent 60%);
+    radial-gradient(
+      ellipse 90% 70% at 50% -10%,
+      rgba(29, 78, 216, 0.55) 0%,
+      rgba(14, 165, 164, 0.22) 42%,
+      transparent 70%
+    ),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(91, 140, 255, 0.24), transparent 60%),
+    radial-gradient(ellipse 40% 35% at 15% 60%, rgba(45, 212, 191, 0.12), transparent 55%);
+}
+
+.aurora-orb {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(91, 140, 255, 0.55) 0%,
+    rgba(45, 212, 191, 0.25) 40%,
+    transparent 70%
+  );
+  filter: blur(2px);
+  box-shadow: 0 0 60px rgba(91, 140, 255, 0.35);
 }
 
 .card-glass {
-  background: linear-gradient(180deg, rgba(18, 26, 46, 0.9) 0%, rgba(11, 18, 32, 0.85) 100%);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(248, 250, 252, 0.06),
+    0 8px 32px rgba(5, 8, 15, 0.4);
 }
 
 .status-attested {

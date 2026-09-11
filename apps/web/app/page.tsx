@@ -4,7 +4,7 @@ import { SlaIncidentBanner } from '@/components/sla-banner';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-navy text-slate-100">
+    <div className="surface-void min-h-screen text-slate-100">
       <SlaIncidentBanner variant="marketing" />
 
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
@@ -46,7 +46,7 @@ export default function LandingPage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/app/assessment"
-            className="rounded-full bg-annex-deep px-5 py-2.5 text-sm font-semibold text-white shadow-glow hover:bg-blue-700"
+            className="rounded-full bg-aurora-cta px-5 py-2.5 text-sm font-semibold text-white shadow-aurora hover:opacity-95"
           >
             Lancer l&apos;assessment (15 min)
           </Link>
