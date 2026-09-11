@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HealthModule } from './health/health.module';
 import { SessionModule } from './session/session.module';
 import { AuthModule } from './auth/auth.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { TrustModule } from './trust/trust.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { OrgsModule } from './orgs/orgs.module';
@@ -19,6 +20,7 @@ import { StoreModule } from './store/store.module';
  * Module racine Annex21.
  * Data residency EU (RG-10) : ConfigModule ne doit pas pointer vers des stores hors UE.
  * Assessment / incidents / evidence : uniquement via AppAuthGuard — jamais /public/trust (RG-07).
+ * Onboarding server gate : orgs.onboarding_completed_at + OnboardingGuard sur connectors / assessments / incidents / trust writes.
  * Store : Postgres (DATABASE_URL / POSTGRES_*) avec fallback in-memory loggé en dev.
  */
 @Module({
@@ -29,6 +31,7 @@ import { StoreModule } from './store/store.module';
     SessionModule,
     HealthModule,
     AuthModule,
+    OnboardingModule,
     TrustModule,
     EvidenceModule,
     OrgsModule,

@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AppAuthGuard } from '../common/app-auth.guard';
+import { OnboardingGuard } from '../onboarding/onboarding.guard';
 import type { AuthedRequest } from '../session/session.guard';
 import { AssessmentsService } from './assessments.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
@@ -18,10 +19,11 @@ import { CompleteAssessmentDto } from './dto/complete-assessment.dto';
 
 /**
  * Assessment NIS2 — routes privées uniquement (SessionGuard / AppAuthGuard).
+ * OnboardingGuard : 403 ONBOARDING_REQUIRED si Étape 1/2 incomplete.
  * Jamais monté sur /public/trust (RG-07).
  */
 @Controller('assessments')
-@UseGuards(AppAuthGuard)
+@UseGuards(AppAuthGuard, OnboardingGuard)
 export class AssessmentsController {
   constructor(private readonly assessments: AssessmentsService) {}
 

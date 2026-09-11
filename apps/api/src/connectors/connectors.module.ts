@@ -4,9 +4,10 @@ import { ConnectorsService } from './connectors.service';
 import { EvidenceModule } from '../evidence/evidence.module';
 import { AuthStubGuard } from '../common/auth-stub.guard';
 import { AppAuthGuard } from '../common/app-auth.guard';
+import { OnboardingModule } from '../onboarding/onboarding.module';
 
 @Module({
-  imports: [EvidenceModule],
+  imports: [EvidenceModule, OnboardingModule],
   controllers: [ConnectorsController],
   providers: [ConnectorsService, AuthStubGuard, AppAuthGuard],
   exports: [ConnectorsService],

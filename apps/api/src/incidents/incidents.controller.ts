@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AppAuthGuard } from '../common/app-auth.guard';
+import { OnboardingGuard } from '../onboarding/onboarding.guard';
 import type { AuthedRequest } from '../session/session.guard';
 import { IncidentsService } from './incidents.service';
 import { OpenIncidentDto } from './dto/open-incident.dto';
@@ -16,11 +17,12 @@ import { CompleteStepDto } from './dto/complete-step.dto';
 import { LinkEvidenceDto } from './dto/link-evidence.dto';
 
 /**
- * Incidents + SLA ANSSI — privé (AppAuthGuard).
+ * Incidents + SLA ANSSI — privé (AppAuthGuard + OnboardingGuard).
+ * 403 ONBOARDING_REQUIRED si orgs.onboarding_completed_at absent.
  * Jamais exposé sur /public/trust (RG-07/08).
  */
 @Controller('incidents')
-@UseGuards(AppAuthGuard)
+@UseGuards(AppAuthGuard, OnboardingGuard)
 export class IncidentsController {
   constructor(private readonly incidents: IncidentsService) {}
 
