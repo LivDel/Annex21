@@ -10,7 +10,7 @@ import type {
 } from '@annex21/shared';
 
 /**
- * Store in-memory MVP (remplacé par Postgres in-EU en durcissement).
+ * Seed + fallback in-memory (dev). Postgres via DomainStore quand DATABASE_URL/POSTGRES_* OK.
  * Seed aligné sur les maquettes : Acme Industrie SAS.
  * Assessment / incidents / evidence : jamais montés sur /public/trust (RG-07/08).
  */
@@ -205,7 +205,7 @@ export const playbookTemplates: PlaybookTemplate[] = [
           sortOrder: 4,
           window: '72h',
           title: 'Notifier ANSSI / autorités',
-          description: 'Dépôt notification initiale auprès de l’autorité compétente (preuve = accusé).',
+          description: 'Dépôt notification initiale auprès de l\u2019autorité compétente (preuve = accusé).',
           ownerRole: 'owner',
           requiresEvidence: true,
         },
