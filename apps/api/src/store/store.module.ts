@@ -92,6 +92,26 @@ class DomainStoreProxy implements DomainStore {
   listAudit(orgId?: string, limit?: number) {
     return this.impl.listAudit(orgId, limit);
   }
+
+  getBilling(orgId: string) {
+    return this.impl.getBilling(orgId);
+  }
+  upsertBilling(
+    orgId: string,
+    patch: Parameters<DomainStore['upsertBilling']>[1],
+  ) {
+    return this.impl.upsertBilling(orgId, patch);
+  }
+  findOrgIdByStripeCustomer(customerId: string) {
+    return this.impl.findOrgIdByStripeCustomer(customerId);
+  }
+  claimWebhookEvent(
+    eventId: string,
+    eventType: string,
+    orgId?: string | null,
+  ) {
+    return this.impl.claimWebhookEvent(eventId, eventType, orgId);
+  }
 }
 
 @Global()
