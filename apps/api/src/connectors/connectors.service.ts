@@ -12,6 +12,7 @@ import type {
 } from '@annex21/shared';
 import { EvidenceService } from '../evidence/evidence.service';
 import { encryptSecret } from './secrets.crypto';
+import { trySanitizeRedirect } from '../auth/safe-redirect';
 
 /** Scopes Entra : openid offline_access User.Read AuditLog.Read.All — JAMAIS Directory.Read.All */
 const ENTRA_SCOPES = ['openid', 'offline_access', 'User.Read', 'AuditLog.Read.All'] as const;
@@ -61,7 +62,7 @@ export class ConnectorsService {
   async connect(
     provider: ConnectorProvider,
     orgId: string,
-    dto: { roleArn?: string; redirectUri?: string },
+    dto: { roleArn?: string; redirectUri?: string; redirect?: string },
   ): Promise<ConnectorConnectResponse> {
     this.assertProvider(provider);
     const row = this.ensure(orgId, provider);
@@ -88,7 +89,11 @@ export class ConnectorsService {
       };
     }
 
-    const authorizationUrl = this.buildOAuthUrl(provider, orgId, dto.redirectUri);
+    // Open-redirect hardening (same helper / AUTH_REDIRECT_ALLOWLIST as GET /auth/verify):
+    // never trust client redirectUri / redirect / callback URL — reject evil.com, //evil,
+    // javascript:, etc. Invalid or missing → server-controlled API callback (safe default).
+    const clientRedirect = dto.redirectUri ?? dto.redirect;
+    const authorizationUrl = this.buildOAuthUrl(provider, orgId, clientRedirect);
     return {
       provider,
       state: 'connecting',
@@ -221,9 +226,10 @@ export class ConnectorsService {
     const apiOrigin =
       process.env.API_PUBLIC_URL ??
       `http://localhost:${process.env.API_PORT ?? 3001}`;
-    const callback =
-      redirectUri ??
-      `${apiOrigin}/connectors/${provider}/callback?orgId=${encodeURIComponent(orgId)}`;
+    // Safe default = our API OAuth callback (not an arbitrary client URL).
+    const safeDefault = `${apiOrigin}/connectors/${provider}/callback?orgId=${encodeURIComponent(orgId)}`;
+    // Reuse auth allowlist: only relative `/…` or AUTH_REDIRECT_ALLOWLIST origins.
+    const callback = trySanitizeRedirect(redirectUri) ?? safeDefault;
 
     if (provider === 'entra') {
       // Commentaire : scopes sans Directory.Read.All — UX « lecture journaux d’audit »
