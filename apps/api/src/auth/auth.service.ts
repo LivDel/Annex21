@@ -49,7 +49,7 @@ export class AuthService {
       process.env.API_PUBLIC_URL ??
       `http://localhost:${process.env.API_PORT ?? 3001}`;
     // Verify via API (sets cookie) puis redirect web
-    const magicLinkUrl = `${apiOrigin}/auth/verify?token=${encodeURIComponent(token)}&redirect=${encodeURIComponent(`${webOrigin}/app`)}`;
+    const magicLinkUrl = `${apiOrigin}/auth/verify?token=${encodeURIComponent(token)}&redirect=${encodeURIComponent(`${webOrigin}/app/onboarding`)}`;
 
     try {
       await this.email.sendMagicLink({
