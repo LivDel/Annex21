@@ -5,16 +5,23 @@ import { SlaIncidentBanner } from '@/components/sla-banner';
 const NAV: { href: string; label: string; match: string }[] = [
   { href: '/app/assessment', label: 'Assessment', match: '/app/assessment' },
   { href: '/app/playbooks', label: 'Contrôles', match: '/app/playbooks' },
-  { href: '/app/playbooks', label: 'Incidents', match: '/app/incidents' },
+  { href: '/app/incidents', label: 'Incidents', match: '/app/incidents' },
   { href: '/app/evidence', label: 'Evidence', match: '/app/evidence' },
   { href: '/app/trust-editor', label: 'Trust editor', match: '/app/trust-editor' },
 ];
+
+export type AppNavActive =
+  | '/app/assessment'
+  | '/app/playbooks'
+  | '/app/incidents'
+  | '/app/evidence'
+  | '/app/trust-editor';
 
 export function AppShell({
   active,
   children,
 }: {
-  active: '/app/assessment' | '/app/playbooks' | '/app/evidence' | '/app/trust-editor';
+  active: AppNavActive;
   children: React.ReactNode;
 }) {
   return (
