@@ -133,7 +133,10 @@ export function linkStepEvidence(incidentId: string, stepId: string, evidenceId:
 }
 
 export function completeStep(
-  incidentId: string, stepId: string, evidenceIds?: string[]) {
+  incidentId: string,
+  stepId: string,
+  evidenceIds?: string[],
+) {
   return api(`/incidents/${incidentId}/steps/${stepId}/complete`, {
     method: 'POST',
     body: JSON.stringify({ evidenceIds }),
@@ -215,7 +218,6 @@ export function extractApiErrors(err: unknown): string[] {
   const b = body as { errors?: string[]; message?: string | string[] };
   if (Array.isArray(b.errors) && b.errors.length) return b.errors;
   if (Array.isArray(b.message)) return b.message;
-  if (typeof b.message === 'string') return [b.message];
   return [(err as Error).message || 'Erreur API'];
 }
 
@@ -226,7 +228,7 @@ export function getBillingStatus(orgId = DEFAULT_ORG) {
   );
 }
 
-export function createBillingCheckout(payload: CreateCheckoutRequest = {}) {
+export function createBillingCheckout(payload: CreateCheckoutRequest) {
   return api<CreateCheckoutResponse>('/billing/checkout', {
     method: 'POST',
     body: JSON.stringify(payload),
