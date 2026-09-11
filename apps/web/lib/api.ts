@@ -39,6 +39,7 @@ export async function loadTrustPreview(orgSlug: string): Promise<TrustCenterView
   try {
     const res = await fetch(`${API}/trust/${orgSlug}`, {
       cache: 'no-store',
+      credentials: 'include',
       headers: { Authorization: `Bearer ${AUTH_STUB}` },
       signal: AbortSignal.timeout(800),
     });
