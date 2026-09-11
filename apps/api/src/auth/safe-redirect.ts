@@ -1,13 +1,19 @@
 /**
- * Open-redirect hardening for GET /auth/verify?redirect=
+ * Open-redirect hardening for GET /auth/verify?redirect= and
+ * POST /connectors/:provider/connect (redirectUri / redirect).
  * Never trust arbitrary client redirect / redirectUri.
  * Allow only:
  *  - relative paths starting with `/` (same web origin), OR
  *  - absolute URLs whose origin is in AUTH_REDIRECT_ALLOWLIST
+ *    (web origin + API public origin for OAuth callbacks)
  * Reject: https://evil.com, //evil.com, javascript:, data:, etc.
+ *
+ * Soft follow-up after PR #5: default post-verify land is Étape 1/2
+ * (`/app/onboarding`), not connectors (`/app`).
  */
 
-const DEFAULT_PATH = '/app';
+/** Post-verify / missing-redirect default — onboarding Étape 1/2. */
+const DEFAULT_PATH = '/app/onboarding';
 
 function webOrigin(): string {
   return (
@@ -17,13 +23,23 @@ function webOrigin(): string {
   );
 }
 
-/** Comma-separated origins; always includes localhost:3000 + web CORS origin. */
+function apiOrigin(): string {
+  return (
+    process.env.API_PUBLIC_URL ??
+    `http://localhost:${process.env.API_PORT ?? 3001}`
+  );
+}
+
+/** Comma-separated origins; always includes localhost:3000 + web CORS + API public. */
 export function redirectAllowlist(): Set<string> {
   const defaults = [
     'http://localhost:3000',
+    'http://localhost:3001',
     webOrigin(),
+    apiOrigin(),
     process.env.API_CORS_ORIGIN,
     process.env.NEXT_PUBLIC_WEB_ORIGIN,
+    process.env.API_PUBLIC_URL,
   ].filter(Boolean) as string[];
 
   const fromEnv = (process.env.AUTH_REDIRECT_ALLOWLIST ?? '')
@@ -43,22 +59,20 @@ export function redirectAllowlist(): Set<string> {
 }
 
 /**
- * Returns a safe absolute redirect URL on the web origin (or allowlisted).
- * Invalid / missing → `${webOrigin}/app`.
+ * Core allowlist check — returns a safe absolute URL, or `null` if rejected.
+ * Shared by auth verify and connectors connect (no silent evil.com passthrough).
  */
-export function sanitizeAuthRedirect(raw: string | undefined | null): string {
-  const origin = webOrigin();
-  const fallback = `${origin.replace(/\/$/, '')}${DEFAULT_PATH}`;
-
+export function trySanitizeRedirect(raw: string | undefined | null): string | null {
   if (raw == null || String(raw).trim() === '') {
-    return fallback;
+    return null;
   }
 
+  const origin = webOrigin();
   const trimmed = String(raw).trim();
 
   // Protocol-relative //evil.com
   if (trimmed.startsWith('//')) {
-    return fallback;
+    return null;
   }
 
   // Relative path: must start with single `/`, no backslash / control chars
@@ -68,16 +82,16 @@ export function sanitizeAuthRedirect(raw: string | undefined | null): string {
       trimmed.includes('\\') ||
       /[\u0000-\u001f]/.test(trimmed)
     ) {
-      return fallback;
+      return null;
     }
     try {
       const resolved = new URL(trimmed, origin);
       if (resolved.origin !== new URL(origin).origin) {
-        return fallback;
+        return null;
       }
       return resolved.toString();
     } catch {
-      return fallback;
+      return null;
     }
   }
 
@@ -85,17 +99,30 @@ export function sanitizeAuthRedirect(raw: string | undefined | null): string {
   try {
     const url = new URL(trimmed);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return fallback;
+      return null;
     }
     // Block credentials in URL, userinfo tricks
     if (url.username || url.password) {
-      return fallback;
+      return null;
     }
     if (!redirectAllowlist().has(url.origin)) {
-      return fallback;
+      return null;
     }
     return url.toString();
   } catch {
-    return fallback;
+    return null;
   }
+}
+
+/**
+ * Returns a safe absolute redirect URL on the web origin (or allowlisted).
+ * Invalid / missing → `${webOrigin}/app/onboarding` (Étape 1/2).
+ */
+export function sanitizeAuthRedirect(
+  raw: string | undefined | null,
+  defaultPath: string = DEFAULT_PATH,
+): string {
+  const origin = webOrigin();
+  const fallback = `${origin.replace(/\/$/, '')}${defaultPath.startsWith('/') ? defaultPath : `/${defaultPath}`}`;
+  return trySanitizeRedirect(raw) ?? fallback;
 }
