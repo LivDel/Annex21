@@ -205,7 +205,7 @@ export const playbookTemplates: PlaybookTemplate[] = [
           sortOrder: 4,
           window: '72h',
           title: 'Notifier ANSSI / autorités',
-          description: 'Dépôt notification initiale auprès de l\u2019autorité compétente (preuve = accusé).',
+          description: 'Dépôt notification initiale auprès de l’autorité compétente (preuve = accusé).',
           ownerRole: 'owner',
           requiresEvidence: true,
         },
