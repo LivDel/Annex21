@@ -52,6 +52,9 @@ export default async function PublicTrustPage({
             </p>
           </div>
           <TrustStatusBadge status={trust.status} />
+          <span className="rounded-full border border-annex-mint/40 px-2.5 py-0.5 text-[11px] font-medium text-annex-mint">
+            Lecture seule · Public
+          </span>
         </div>
         <div className="flex overflow-hidden rounded-lg border border-white/10 text-xs font-medium">
           <span className="bg-annex-deep px-3 py-1.5">FR</span>

@@ -2,6 +2,7 @@ import type { PublicTrustCenter, TrustCenterView } from '@annex21/shared';
 import { MOCK_PUBLIC_TRUST, MOCK_TRUST_PREVIEW } from './mock-data';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const AUTH_STUB = process.env.NEXT_PUBLIC_AUTH_STUB_TOKEN ?? 'annex21-dev-stub';
 
 /**
  * Charge un Trust Center pour la surface PUBLIQUE `/trust/[org]`.
@@ -31,14 +32,14 @@ export async function loadTrust(orgSlug: string): Promise<PublicTrustCenter | nu
 
 /**
  * Preview authentifiée (éditeur) — draft autorisé.
- * Appelle l'API privée `/trust/:org` (auth stub) ; fallback mock preview only.
+ * Header aligné sur AuthStubGuard : Authorization: Bearer <token>.
  * Ne doit JAMAIS être utilisé par `/trust/[org]` public.
  */
 export async function loadTrustPreview(orgSlug: string): Promise<TrustCenterView | null> {
   try {
     const res = await fetch(`${API}/trust/${orgSlug}`, {
       cache: 'no-store',
-      headers: { 'x-annex21-auth': 'stub' },
+      headers: { Authorization: `Bearer ${AUTH_STUB}` },
       signal: AbortSignal.timeout(800),
     });
     if (res.ok) {
