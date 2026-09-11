@@ -41,7 +41,7 @@ export default async function PublicTrustPage({
   if (!trust || trust.status !== 'published') notFound();
 
   return (
-    <div className="min-h-screen bg-navy">
+    <div className="surface-void min-h-screen">
       <header className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
         <div className="flex items-center gap-4">
           <Logo href="/" compact />
@@ -99,7 +99,7 @@ export default async function PublicTrustPage({
           </section>
 
           <section className="card-glass flex min-h-[180px] flex-col items-center justify-center rounded-2xl p-6 text-center">
-            <div className="mb-3 h-10 w-10 rounded-full bg-annex-deep/80 shadow-glow" />
+            <div className="aurora-orb mb-3 h-12 w-12 rounded-full" />
             <p className="text-sm font-semibold">Profil publié</p>
             <p className="mt-1 max-w-[220px] text-[11px] text-slate-500">
               Contenu approuvé uniquement. Aucune preuve brute n&apos;est exposée ici.
