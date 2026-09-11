@@ -1,11 +1,10 @@
-import type { TrustCenterView } from '@annex21/shared';
+import type { PublicTrustCenter, TrustCenterView } from '@annex21/shared';
 
 /**
- * Jeux de démo pour le build Next (pas d'API requise à `next build`).
- * /trust/acme → published ; /trust/demo-draft → draft (bannière brouillon).
- * Aucune evidence brute dans ces payloads (RG-08).
+ * Mocks pour la surface PUBLIQUE uniquement (published).
+ * RG-07 : aucun draft ici — `/trust/demo-draft` doit 404 en public.
  */
-export const MOCK_TRUST: Record<string, TrustCenterView> = {
+export const MOCK_PUBLIC_TRUST: Record<string, PublicTrustCenter> = {
   acme: {
     org: { slug: 'acme', name: 'Acme Industrie SAS', country: 'FR' },
     status: 'published',
@@ -23,6 +22,22 @@ export const MOCK_TRUST: Record<string, TrustCenterView> = {
       { id: 'a2', title: 'Attestation incident response', publishedAt: '2026-09-03T00:00:00.000Z' },
     ],
   },
+};
+
+/** Orgs pré-rendues pour `/trust/[org]` public — published only. */
+export const DEMO_ORGS = Object.keys(MOCK_PUBLIC_TRUST);
+
+/**
+ * Mocks preview éditeur (auth) — draft autorisé.
+ * Uniquement pour `/app/trust-editor/preview/[org]`, jamais `/trust/[org]`.
+ */
+export const MOCK_TRUST_PREVIEW: Record<string, TrustCenterView> = {
+  ...Object.fromEntries(
+    Object.entries(MOCK_PUBLIC_TRUST).map(([slug, pub]) => [
+      slug,
+      { ...pub, status: 'published' as const } satisfies TrustCenterView,
+    ]),
+  ),
   'demo-draft': {
     org: { slug: 'demo-draft', name: 'Nordic MSP (démo brouillon)', country: 'DE' },
     status: 'draft',
@@ -35,5 +50,3 @@ export const MOCK_TRUST: Record<string, TrustCenterView> = {
     attestations: [],
   },
 };
-
-export const DEMO_ORGS = Object.keys(MOCK_TRUST);

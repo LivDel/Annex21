@@ -29,15 +29,15 @@ export default function TrustEditorPage() {
             Prévisualiser Acme (public)
           </Link>
           <Link
-            href="/trust/demo-draft"
+            href="/app/trust-editor/preview/demo-draft"
             className="rounded-full border border-amber-400/40 px-4 py-2 text-sm font-medium text-amber-200"
           >
-            Prévisualiser brouillon
+            Prévisualiser brouillon (auth)
           </Link>
         </div>
         <p className="mt-6 text-xs text-slate-500">
-          POST /trust/:orgSlug/publish (auth stub) passe draft → published. Les preuves brutes
-          restent sur /evidence.
+          `/trust/demo-draft` public → 404 (RG-07). Draft uniquement via preview auth.
+          POST /trust/:orgSlug/publish (auth stub) passe draft → published.
         </p>
       </div>
     </AppShell>
