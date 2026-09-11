@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0b1220;
+  color: #f8fafc;
+}
+
+.hero-glow {
+  background:
+    radial-gradient(ellipse 90% 70% at 50% -10%, rgba(29, 78, 216, 0.55) 0%, rgba(14, 165, 164, 0.18) 42%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(91, 140, 255, 0.18), transparent 60%);
+}
+
+.card-glass {
+  background: linear-gradient(180deg, rgba(18, 26, 46, 0.9) 0%, rgba(11, 18, 32, 0.85) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.status-attested {
+  @apply text-annex-mint border-annex-mint/40 bg-annex-mint/10;
+}
+
+.status-progress {
+  @apply text-amber-300 border-amber-300/40 bg-amber-300/10;
+}
+
+.status-preparing {
+  @apply text-slate-400 border-slate-500/40 bg-slate-500/10;
+}
