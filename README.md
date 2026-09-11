@@ -92,9 +92,11 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | `/app/controls` | Contrôles org — list / update statuts |
 | `/app/playbooks` | Templates FR-ANSSI + ouverture incident |
 | `/app/incidents` | Bannière SLA live, étapes, liaison preuves stub |
-| `/app/*` | Assessment, Playbooks ANSSI, Evidence, Trust editor |
+| `/app/trust-editor` | Éditeur Trust (draft) + checklist publish + unpublish |
+| `/app/trust-editor/preview/[org]` | Preview auth draft (≠ public) |
+| `/app/*` | Assessment, Playbooks ANSSI, Evidence |
 
-Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouillon).
+Démos Trust (sans API) : `/trust/acme` (public) et `/trust/novatech` (empty), `/trust/demo-draft` → 404 public.
 
 ## API (NestJS)
 
@@ -106,7 +108,10 @@ Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouill
 | `POST` | `/auth/logout` | Destroy session |
 | `GET` | `/public/trust/:orgSlug` | **Published only** — 404 si draft |
 | `GET` | `/trust/:orgSlug` | Auth — draft OK (sans evidence) |
-| `POST` | `/trust/:orgSlug/publish` | `draft → published` |
+| `PATCH` | `/trust/:orgSlug` | Auth — patch brouillon (profil / locale / disclaimer) |
+| `GET` | `/trust/:orgSlug/checklist` | Auth — checklist publish V1 |
+| `POST` | `/trust/:orgSlug/publish` | Auth — gated checklist → published + audit |
+| `POST` | `/trust/:orgSlug/unpublish` | Auth — published → draft + audit |
 | `GET/POST` | `/evidence`, `/evidence/:id` | **Privé uniquement** |
 | `GET/POST` | `/orgs`, `/orgs/:slug` | Organisations |
 | `GET/POST` | `/connectors…` | Connecteurs MVP |
@@ -136,6 +141,19 @@ annex21/
 - **RG-10** data in-EU (compose + README + commentaires API).
 - V1 = NIS2 hors finance : aucun claim DORA dans l’UI.
 
+
+## Trust editor (V1)
+
+### Figma overlays (Trust editor)
+
+Frames Maquettiste : `screenshots/trust-editor/` (file [Azjl81f8…](https://www.figma.com/design/Azjl81f8lWazR4mbgOovSW?node-id=21-2), page `21:2`).
+Attributs `data-luix-frame` / `data-figma-node` sur éditeur / preview / modal+toast / public / empty.
+
+- **RG-07** draft ≠ public : `/trust/:org` published-only ; preview auth sous `/app/trust-editor/preview/...`.
+- **Publish gated** : org nommée + ≥1 contrôle attesté + disclaimer ack — erreurs FR sinon.
+- **Unpublish** → brouillon ; CTA soft quand status published.
+- **Zéro evidence** sur Trust (éditeur + public). Persisté `trust_centers` (Postgres DomainStore / mémoire).
+- **FORCE_EU_RESIDENCY_WARN** : jamais en prod — `assertEuResidency` fail-closed même si flag set.
 
 ## Assessment + Playbooks (V1)
 

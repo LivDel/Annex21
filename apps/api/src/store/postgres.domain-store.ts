@@ -11,6 +11,12 @@ import type {
   PlaybookTemplate,
   PlaybookTemplateBody,
   ScopeStatus,
+  TrustAttestation,
+  TrustCenterView,
+  TrustControlSummary,
+  TrustDraftPatch,
+  TrustLocale,
+  TrustStatus,
 } from '@annex21/shared';
 import type { PgService } from '../db/pg.service';
 import type {
@@ -96,6 +102,29 @@ function mapAudit(r: Record<string, unknown>): AuditEvent {
     entityId: String(r.entity_id),
     payload: asJson<Record<string, unknown> | undefined>(r.payload, undefined),
     createdAt: new Date(String(r.created_at)).toISOString(),
+  };
+}
+
+
+function mapTrust(r: Record<string, unknown>): TrustCenterView {
+  return {
+    orgId: String(r.org_id),
+    org: {
+      slug: String(r.org_slug),
+      name: String(r.org_name),
+      country: String(r.org_country),
+    },
+    status: r.status as TrustStatus,
+    locale: r.locale as TrustLocale,
+    controls: asJson<TrustControlSummary[]>(r.controls, []),
+    attestations: asJson<TrustAttestation[]>(r.attestations, []),
+    disclaimerAck: Boolean(r.disclaimer_ack),
+    unpublishedNotes: r.unpublished_notes
+      ? String(r.unpublished_notes)
+      : undefined,
+    updatedAt: r.updated_at
+      ? new Date(String(r.updated_at)).toISOString()
+      : undefined,
   };
 }
 
@@ -415,6 +444,68 @@ export class PostgresDomainStore implements DomainStore {
       client.release();
     }
     return (await this.getIncident(row.id)) ?? row;
+  }
+
+
+  async getTrustBySlug(orgSlug: string): Promise<TrustCenterView | null> {
+    const res = await this.pg.query(
+      `SELECT * FROM trust_centers WHERE org_slug = $1`,
+      [orgSlug],
+    );
+    const row = res.rows[0];
+    return row ? mapTrust(row as Record<string, unknown>) : null;
+  }
+
+  async saveTrust(row: TrustCenterView): Promise<TrustCenterView> {
+    const updatedAt = new Date().toISOString();
+    await this.pg.query(
+      `INSERT INTO trust_centers
+        (org_id, org_slug, org_name, org_country, status, locale, controls, attestations, disclaimer_ack, unpublished_notes, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11)
+       ON CONFLICT (org_id) DO UPDATE SET
+        org_slug = EXCLUDED.org_slug,
+        org_name = EXCLUDED.org_name,
+        org_country = EXCLUDED.org_country,
+        status = EXCLUDED.status,
+        locale = EXCLUDED.locale,
+        controls = EXCLUDED.controls,
+        attestations = EXCLUDED.attestations,
+        disclaimer_ack = EXCLUDED.disclaimer_ack,
+        unpublished_notes = EXCLUDED.unpublished_notes,
+        updated_at = EXCLUDED.updated_at`,
+      [
+        row.orgId,
+        row.org.slug,
+        row.org.name,
+        row.org.country,
+        row.status,
+        row.locale,
+        JSON.stringify(row.controls ?? []),
+        JSON.stringify(row.attestations ?? []),
+        row.disclaimerAck,
+        row.unpublishedNotes ?? null,
+        updatedAt,
+      ],
+    );
+    return (await this.getTrustBySlug(row.org.slug)) ?? { ...row, updatedAt };
+  }
+
+  async patchTrustDraft(
+    orgSlug: string,
+    patch: TrustDraftPatch,
+  ): Promise<TrustCenterView | null> {
+    const current = await this.getTrustBySlug(orgSlug);
+    if (!current) return null;
+    if (patch.orgName !== undefined) current.org.name = patch.orgName;
+    if (patch.country !== undefined) current.org.country = patch.country;
+    if (patch.locale !== undefined) current.locale = patch.locale;
+    if (patch.disclaimerAck !== undefined) {
+      current.disclaimerAck = patch.disclaimerAck;
+    }
+    if (patch.unpublishedNotes !== undefined) {
+      current.unpublishedNotes = patch.unpublishedNotes || undefined;
+    }
+    return this.saveTrust(current);
   }
 
   async appendAudit(input: AppendAuditInput): Promise<AuditEvent> {

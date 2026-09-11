@@ -72,6 +72,20 @@ class DomainStoreProxy implements DomainStore {
   saveIncident(row: Parameters<DomainStore['saveIncident']>[0]) {
     return this.impl.saveIncident(row);
   }
+
+  getTrustBySlug(orgSlug: string) {
+    return this.impl.getTrustBySlug(orgSlug);
+  }
+  saveTrust(row: Parameters<DomainStore['saveTrust']>[0]) {
+    return this.impl.saveTrust(row);
+  }
+  patchTrustDraft(
+    orgSlug: string,
+    patch: Parameters<DomainStore['patchTrustDraft']>[1],
+  ) {
+    return this.impl.patchTrustDraft(orgSlug, patch);
+  }
+
   appendAudit(input: Parameters<DomainStore['appendAudit']>[0]) {
     return this.impl.appendAudit(input);
   }

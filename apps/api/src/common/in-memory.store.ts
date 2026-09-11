@@ -11,7 +11,7 @@ import type {
 
 /**
  * Seed + fallback in-memory (dev). Postgres via DomainStore quand DATABASE_URL/POSTGRES_* OK.
- * Seed aligné sur les maquettes : Acme Industrie SAS.
+ * Seed aligné sur les maquettes : Acme SAS.
  * Assessment / incidents / evidence : jamais montés sur /public/trust (RG-07/08).
  */
 const now = '2026-09-11T10:00:00.000Z';
@@ -20,7 +20,7 @@ export const organizations: Organization[] = [
   {
     id: 'org_acme',
     slug: 'acme',
-    name: 'Acme Industrie SAS',
+    name: 'Acme SAS',
     country: 'FR',
     createdAt: now,
   },
@@ -31,41 +31,63 @@ export const organizations: Organization[] = [
     country: 'DE',
     createdAt: now,
   },
+  {
+    id: 'org_novatech',
+    slug: 'novatech',
+    name: 'NovaTech',
+    country: 'FR',
+    createdAt: now,
+  },
 ];
 
 export const trustCenters: TrustCenterView[] = [
   {
-    org: { slug: 'acme', name: 'Acme Industrie SAS', country: 'FR' },
-    status: 'published',
+    orgId: 'org_acme',
+    org: { slug: 'acme', name: 'Acme SAS', country: 'FR' },
+    status: 'draft',
     locale: 'fr',
+    disclaimerAck: true,
+    unpublishedNotes: 'Finaliser continuité avant go-live.',
+    updatedAt: now,
     controls: [
-      { id: 'c1', domain: 'Gouvernance & politiques', status: 'attested' },
-      { id: 'c2', domain: 'Gestion des risques', status: 'attested' },
-      { id: 'c3', domain: "Continuité d'activité", status: 'in_progress' },
-      { id: 'c4', domain: 'Réponse aux incidents', status: 'attested' },
-      { id: 'c5', domain: "Chaîne d'approvisionnement", status: 'preparing' },
-      { id: 'c6', domain: 'Formation & sensibilisation', status: 'attested' },
+      { id: 'c1', domain: 'Gouvernance & responsabilités', status: 'attested' },
+      { id: 'c2', domain: 'Gestion des risques', status: 'in_progress' },
+      { id: 'c3', domain: "Continuité d'activité", status: 'preparing' },
+      { id: 'c4', domain: "Sécurité de la chaîne d'approvisionnement", status: 'attested' },
     ],
     attestations: [
       {
         id: 'a1',
-        title: 'Déclaration de conformité',
-        publishedAt: '2026-08-12T00:00:00.000Z',
+        title: 'Attestation gouvernance NIS2',
+        publishedAt: '2026-03-12T00:00:00.000Z',
       },
       {
         id: 'a2',
-        title: 'Attestation incident response',
-        publishedAt: '2026-09-03T00:00:00.000Z',
+        title: "Chaîne d'approvisionnement",
+        publishedAt: '2026-02-02T00:00:00.000Z',
       },
     ],
   },
   {
+    orgId: 'org_novatech',
+    org: { slug: 'novatech', name: 'NovaTech', country: 'FR' },
+    status: 'published',
+    locale: 'fr',
+    disclaimerAck: true,
+    updatedAt: now,
+    controls: [],
+    attestations: [],
+  },
+  {
+    orgId: 'org_draft',
     org: { slug: 'demo-draft', name: 'Nordic MSP (démo brouillon)', country: 'DE' },
     status: 'draft',
     locale: 'fr',
+    disclaimerAck: false,
     unpublishedNotes: 'En cours de revue CISO — ne pas exposer aux acheteurs.',
+    updatedAt: now,
     controls: [
-      { id: 'c1', domain: 'Gouvernance & politiques', status: 'in_progress' },
+      { id: 'c1', domain: 'Gouvernance & responsabilités', status: 'in_progress' },
       { id: 'c2', domain: 'Gestion des risques', status: 'preparing' },
     ],
     attestations: [],
