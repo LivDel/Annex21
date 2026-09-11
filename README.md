@@ -97,7 +97,7 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | `/app/trust-editor/preview/[org]` | Preview auth draft (≠ public) |
 | `/app/*` | Assessment, Playbooks ANSSI, Evidence |
 
-Démos Trust (sans API) : `/trust/acme` (public) et `/trust/novatech` (empty), `/trust/demo-draft` → 404 public.
+Demos Trust (sans API) : `/trust/acme` (public) et `/trust/novatech` (empty), `/trust/demo-draft` → 404 public.
 
 ## API (NestJS)
 
@@ -185,3 +185,11 @@ UX Chef : `requires_evidence` → « Marquer fait » **disabled** + erreur inlin
 ## Licence
 
 Propriétaire — Annex21. Usage interne MVP.
+
+## Billing ACV (Stripe, sales-led)
+
+- `POST /billing/checkout` — Checkout Session (subscription ACV ± fee onboarding)
+- `GET /billing/status` — `pending` | `active` | `past_due` | `canceled`
+- `POST /billing/webhook` — Stripe-Signature + raw body, idempotent
+- UI : `/app/billing` (void soft, CTA « Réessayer » si `past_due`)
+- Secrets EU : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` côté API uniquement (`DATA_RESIDENCY=EU`)
