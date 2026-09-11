@@ -24,7 +24,7 @@ Ne pas pointer `POSTGRES_*`, Redis ou MinIO vers un cloud hors UE en production.
 ## Auth (magic-link + sessions Redis)
 
 - `POST /auth/magic-link` `{ email }` — **toujours 200** (pas d’énumération). Envoi Brevo EU si `BREVO_*` configuré ; sinon stub log en dev (+ `devToken`).
-- `GET /auth/verify?token=` — one-shot (hash Redis TTL 15 min), crée session opaque Redis (7 j), cookie `httpOnly` / `Secure` (prod) / `SameSite=Lax`.
+- `GET /auth/verify?token=` — one-shot (hash Redis TTL 15 min), crée session opaque Redis (7 j), cookie `httpOnly` / `Secure` (prod) / `SameSite=Lax`. Redirect `?redirect=` allowlisté (`AUTH_REDIRECT_ALLOWLIST`, open-redirect hardening) ; invalide → `/app`.
 - `POST /auth/logout` — destroy session + clear cookie.
 - Routes protégées : `SessionGuard` (cookie Redis). Stub Bearer `annex21-dev-stub` **uniquement** si `AUTH_ALLOW_STUB=true` **et** `NODE_ENV=development`.
 - Fallback in-memory Redis **uniquement** en development (warning console).
@@ -83,7 +83,8 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | `/trust/[org]` | Trust Center public — états **DRAFT** vs **PUBLIC**. **Aucune preuve brute.** |
 | `/app/login` | Demande magic-link |
 | `/app/login/check-email` | Confirmation générique (anti-énumération) |
-| `/app` | Org picker stub + grille connecteurs (5 états) |
+| `/app/onboarding` | Étape 1/2 — organisation (secteur NIS2, rôle CISO) |
+| `/app` | Étape 2/2 — org picker stub + grille connecteurs (5 états) |
 | `/app/*` | Assessment, Playbooks ANSSI, Evidence, Trust editor |
 
 Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouillon).
