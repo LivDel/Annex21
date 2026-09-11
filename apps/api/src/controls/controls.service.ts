@@ -1,31 +1,38 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Control } from '@annex21/shared';
-import { controls } from '../common/in-memory.store';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 import { AuditService } from '../audit/audit.service';
 import { UpdateControlDto } from './dto/update-control.dto';
 
 @Injectable()
 export class ControlsService {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    @Inject(DOMAIN_STORE) private readonly store: DomainStore,
+    private readonly audit: AuditService,
+  ) {}
 
-  list(orgId?: string): Control[] {
-    if (!orgId) return [...controls];
-    return controls.filter((c) => c.orgId === orgId);
+  list(orgId?: string): Promise<Control[]> {
+    return this.store.listControls(orgId);
   }
 
-  getById(id: string): Control {
-    const row = controls.find((c) => c.id === id);
+  async getById(id: string): Promise<Control> {
+    const row = await this.store.getControl(id);
     if (!row) throw new NotFoundException(`Contrôle ${id} introuvable`);
     return row;
   }
 
-  update(id: string, dto: UpdateControlDto, actorUserId?: string): Control {
-    const row = this.getById(id);
-    if (dto.status !== undefined) row.status = dto.status;
-    if (dto.owner !== undefined) row.owner = dto.owner;
-    if (dto.dueAt !== undefined) row.dueAt = dto.dueAt;
-    row.updatedAt = new Date().toISOString();
-    this.audit.append({
+  async update(
+    id: string,
+    dto: UpdateControlDto,
+    actorUserId?: string,
+  ): Promise<Control> {
+    const row = await this.store.updateControl(id, {
+      status: dto.status,
+      owner: dto.owner,
+      dueAt: dto.dueAt,
+    });
+    if (!row) throw new NotFoundException(`Contrôle ${id} introuvable`);
+    await this.audit.append({
       orgId: row.orgId,
       action: 'control.updated',
       entityType: 'control',
