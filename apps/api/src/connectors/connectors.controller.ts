@@ -24,6 +24,12 @@ export class ConnectorsController {
     return this.connectors.list(orgId ?? 'org_acme');
   }
 
+  /**
+   * POST /connectors/:provider/connect
+   * redirectUri / redirect from body are allowlisted (sanitizeAuthRedirect /
+   * AUTH_REDIRECT_ALLOWLIST) — same open-redirect hardening as GET /auth/verify.
+   * Arbitrary callback URLs are rejected; OAuth falls back to API callback.
+   */
   @Post(':provider/connect')
   @UseGuards(AppAuthGuard)
   connect(
