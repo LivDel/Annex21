@@ -74,6 +74,10 @@ export function listControls(orgId = DEFAULT_ORG) {
   return api<Control[]>(`/controls?orgId=${encodeURIComponent(orgId)}`);
 }
 
+export function getControl(id: string) {
+  return api<Control>(`/controls/${encodeURIComponent(id)}`);
+}
+
 export function updateControl(
   id: string,
   patch: { status?: Control['status']; owner?: string; dueAt?: string },
