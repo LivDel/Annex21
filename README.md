@@ -27,6 +27,7 @@ Ne pas pointer `POSTGRES_*`, Redis ou MinIO vers un cloud hors UE en production.
 - `GET /auth/verify?token=` — one-shot (hash Redis TTL 15 min), crée session opaque Redis (7 j), cookie `httpOnly` / `Secure` (prod) / `SameSite=Lax`. Redirect `?redirect=` allowlisté (`AUTH_REDIRECT_ALLOWLIST`, open-redirect hardening) ; invalide → `/app`.
 - `POST /auth/logout` — destroy session + clear cookie.
 - Routes protégées : `SessionGuard` (cookie Redis). Stub Bearer `annex21-dev-stub` **uniquement** si `AUTH_ALLOW_STUB=true` **et** `NODE_ENV=development`.
+- Onboarding server gate : **`orgs.onboarding_completed_at`** (Postgres) + session Redis mirror. `OnboardingGuard` → **403 `ONBOARDING_REQUIRED`** sur connectors / assessments / incidents / trust writes. Exempt : auth, onboarding, public trust GET. Pas de Stripe / SSO en V1.
 - Fallback in-memory Redis **uniquement** en development (warning console).
 
 ## Connecteurs MVP
@@ -86,8 +87,8 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | `/trust/[org]` | Trust Center public — états **DRAFT** vs **PUBLIC**. **Aucune preuve brute.** |
 | `/app/login` | Demande magic-link |
 | `/app/login/check-email` | Confirmation générique (anti-énumération) |
-| `/app/onboarding` | Étape 1/2 — organisation (secteur NIS2, rôle CISO) |
-| `/app` | Étape 2/2 — org picker stub + grille connecteurs (5 états) |
+| `/app/onboarding` | Étape 1/2 — organisation (secteur NIS2, rôle CISO) — **POST /onboarding/complete** (server) |
+| `/app` | Étape 2/2 — org picker stub + grille connecteurs (5 états) — **RequireOnboarding** via GET /onboarding/status |
 | `/app/assessment` | Assessment NIS2 — empty / brouillon / résultat + gaps + contrôles |
 | `/app/controls` | Contrôles org — list / update statuts |
 | `/app/playbooks` | Templates FR-ANSSI + ouverture incident |
@@ -106,6 +107,9 @@ Démos Trust (sans API) : `/trust/acme` (public) et `/trust/novatech` (empty), `
 | `POST` | `/auth/magic-link` | Magic-link (toujours 200) |
 | `GET` | `/auth/verify` | One-shot + cookie session |
 | `POST` | `/auth/logout` | Destroy session |
+| `GET` | `/me` | Auth — user + onboarding status (server gate) |
+| `GET` | `/onboarding/status` | Auth — `{ completed, completedAt, org }` |
+| `POST` | `/onboarding/complete` | Auth — `{ orgName, nis2Sector, cisoRole }` → persist Redis/Postgres |
 | `GET` | `/public/trust/:orgSlug` | **Published only** — 404 si draft |
 | `GET` | `/trust/:orgSlug` | Auth — draft OK (sans evidence) |
 | `PATCH` | `/trust/:orgSlug` | Auth — patch brouillon (profil / locale / disclaimer) |
@@ -114,8 +118,10 @@ Démos Trust (sans API) : `/trust/acme` (public) et `/trust/novatech` (empty), `
 | `POST` | `/trust/:orgSlug/unpublish` | Auth — published → draft + audit |
 | `GET/POST` | `/evidence`, `/evidence/:id` | **Privé uniquement** |
 | `GET/POST` | `/orgs`, `/orgs/:slug` | Organisations |
-| `GET/POST` | `/connectors…` | Connecteurs MVP |
-| `GET/POST/PATCH` | `/assessments`, `/assessments/:id`, `/assessments/:id/complete` | Assessment NIS2 (privé, disclaimer_ack) |
+| `GET/POST` | `/connectors…` | Connecteurs MVP — **403 ONBOARDING_REQUIRED** si `orgs.onboarding_completed_at` null (callback OAuth exempt) |
+| `GET/POST/PATCH` | `/assessments…` | Assessment NIS2 — **403 ONBOARDING_REQUIRED** |
+| `GET/POST` | `/incidents…` | Incidents/SLA — **403 ONBOARDING_REQUIRED** |
+| `PATCH/POST` | `/trust/:slug`, `/publish`, `/unpublish` | Trust writes — **403 ONBOARDING_REQUIRED** (GET draft OK; public GET exempt) |
 | `GET/PATCH` | `/controls`, `/controls/:id` | Statuts contrôles org |
 | `GET` | `/playbooks/templates` | Templates FR-ANSSI immutables |
 | `GET/POST` | `/incidents…` | Open / complete step / link evidence / close + `GET /incidents/sla` |
