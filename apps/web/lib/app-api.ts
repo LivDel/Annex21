@@ -3,7 +3,10 @@
  * Ne jamais appeler ces helpers depuis /trust/[org] public (RG-07/08).
  */
 import type {
+  BillingStatusResponse,
   Control,
+  CreateCheckoutRequest,
+  CreateCheckoutResponse,
   Incident,
   IncidentSlaCountdown,
   MeResponse,
@@ -130,10 +133,7 @@ export function linkStepEvidence(incidentId: string, stepId: string, evidenceId:
 }
 
 export function completeStep(
-  incidentId: string,
-  stepId: string,
-  evidenceIds?: string[],
-) {
+  incidentId: string, stepId: string, evidenceIds?: string[]) {
   return api(`/incidents/${incidentId}/steps/${stepId}/complete`, {
     method: 'POST',
     body: JSON.stringify({ evidenceIds }),
@@ -217,4 +217,18 @@ export function extractApiErrors(err: unknown): string[] {
   if (Array.isArray(b.message)) return b.message;
   if (typeof b.message === 'string') return [b.message];
   return [(err as Error).message || 'Erreur API'];
+}
+
+/** Billing ACV — auth + onboarding required. Secrets stay on API. */
+export function getBillingStatus(orgId = DEFAULT_ORG) {
+  return api<BillingStatusResponse>(
+    `/billing/status?orgId=${encodeURIComponent(orgId)}`,
+  );
+}
+
+export function createBillingCheckout(payload: CreateCheckoutRequest = {}) {
+  return api<CreateCheckoutResponse>('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }

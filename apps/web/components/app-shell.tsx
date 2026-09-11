@@ -9,6 +9,7 @@ const NAV: { href: string; label: string; match: string }[] = [
   { href: '/app/incidents', label: 'Incidents', match: '/app/incidents' },
   { href: '/app/evidence', label: 'Evidence', match: '/app/evidence' },
   { href: '/app/trust-editor', label: 'Trust editor', match: '/app/trust-editor' },
+  { href: '/app/billing', label: 'Facturation', match: '/app/billing' },
   { href: '/app', label: 'Accueil', match: '/app' },
 ];
 
@@ -19,7 +20,8 @@ export type AppNavActive =
   | '/app/playbooks'
   | '/app/incidents'
   | '/app/evidence'
-  | '/app/trust-editor';
+  | '/app/trust-editor'
+  | '/app/billing';
 
 export function AppShell({
   active,
