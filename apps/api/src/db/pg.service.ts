@@ -13,6 +13,7 @@ import {
   controls as seedControls,
   incidents as seedIncidents,
   playbookTemplates as seedPlaybooks,
+  trustCenters as seedTrust,
 } from '../common/in-memory.store';
 
 export type StoreBackend = 'postgres' | 'memory';
@@ -56,7 +57,7 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
     if (!url) {
       this.backend = 'memory';
       this.logger.warn(
-        '⚠️  Aucun DATABASE_URL / POSTGRES_* — store assessments/controls/playbooks/incidents/audit IN-MEMORY (dev). ' +
+        '⚠️  Aucun DATABASE_URL / POSTGRES_* — store assessments/controls/playbooks/incidents/trust/audit IN-MEMORY (dev). ' +
           'Données perdues au redémarrage. Démarrer infra/docker-compose.yml + configurer Postgres EU (RG-10).',
       );
       return;
@@ -94,7 +95,7 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
       }
       this.backend = 'memory';
       this.logger.warn(
-        `⚠️  Postgres indisponible (${String(err)}) — fallback IN-MEMORY pour assessments/controls/playbooks/incidents/audit (development only). ` +
+        `⚠️  Postgres indisponible (${String(err)}) — fallback IN-MEMORY pour assessments/controls/playbooks/incidents/trust/audit (development only). ` +
           'Préférer docker compose -f infra/docker-compose.yml up -d puis migrate.',
       );
       // Keep seed arrays as-is for memory mode
@@ -153,6 +154,34 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
         );
       }
       this.logger.log(`Seed controls: ${seedControls.length} row(s)`);
+    }
+
+    const trust = await this.pool.query<{ c: string }>(
+      'SELECT COUNT(*)::text AS c FROM trust_centers',
+    );
+    if (Number(trust.rows[0]?.c ?? 0) === 0) {
+      for (const t of seedTrust) {
+        await this.pool.query(
+          `INSERT INTO trust_centers
+            (org_id, org_slug, org_name, org_country, status, locale, controls, attestations, disclaimer_ack, unpublished_notes, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8::jsonb,$9,$10,$11)
+           ON CONFLICT (org_id) DO NOTHING`,
+          [
+            t.orgId,
+            t.org.slug,
+            t.org.name,
+            t.org.country,
+            t.status,
+            t.locale,
+            JSON.stringify(t.controls ?? []),
+            JSON.stringify(t.attestations ?? []),
+            t.disclaimerAck,
+            t.unpublishedNotes ?? null,
+            t.updatedAt ?? new Date().toISOString(),
+          ],
+        );
+      }
+      this.logger.log(`Seed trust_centers: ${seedTrust.length} row(s)`);
     }
   }
 }
