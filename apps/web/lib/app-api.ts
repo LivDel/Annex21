@@ -9,6 +9,9 @@ import type {
   Nis2Assessment,
   PlaybookTemplate,
   AssessmentAnswers,
+  TrustCenterView,
+  TrustDraftPatch,
+  TrustPublishChecklist,
 } from '@annex21/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -146,4 +149,51 @@ export function formatRemaining(ms: number): string {
   if (days > 0) return `${days}j ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
+}
+
+/** Trust editor — auth only. Jamais depuis /trust/[org] public (RG-07/08). */
+export const DEFAULT_TRUST_SLUG = 'acme';
+
+export function getTrustDraft(orgSlug = DEFAULT_TRUST_SLUG) {
+  return api<TrustCenterView>(`/trust/${encodeURIComponent(orgSlug)}`);
+}
+
+export function patchTrustDraft(orgSlug: string, patch: TrustDraftPatch) {
+  return api<TrustCenterView>(`/trust/${encodeURIComponent(orgSlug)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export function getTrustChecklist(orgSlug = DEFAULT_TRUST_SLUG) {
+  return api<TrustPublishChecklist>(
+    `/trust/${encodeURIComponent(orgSlug)}/checklist`,
+  );
+}
+
+export function publishTrust(orgSlug: string) {
+  return api<TrustCenterView>(`/trust/${encodeURIComponent(orgSlug)}/publish`, {
+    method: 'POST',
+    body: JSON.stringify({ disclaimer_ack: true }),
+  });
+}
+
+export function unpublishTrust(orgSlug: string) {
+  return api<TrustCenterView>(
+    `/trust/${encodeURIComponent(orgSlug)}/unpublish`,
+    { method: 'POST', body: JSON.stringify({}) },
+  );
+}
+
+export function extractApiErrors(err: unknown): string[] {
+  if (!err || typeof err !== 'object') return ['Erreur API'];
+  const body = (err as { body?: unknown }).body;
+  if (!body || typeof body !== 'object') {
+    return [(err as Error).message || 'Erreur API'];
+  }
+  const b = body as { errors?: string[]; message?: string | string[] };
+  if (Array.isArray(b.errors) && b.errors.length) return b.errors;
+  if (Array.isArray(b.message)) return b.message;
+  if (typeof b.message === 'string') return [b.message];
+  return [(err as Error).message || 'Erreur API'];
 }
