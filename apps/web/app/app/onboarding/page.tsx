@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/logo';
+import { ONBOARDING_DONE_KEY } from '@/lib/onboarding';
 
 const NIS2_SECTORS = [
   'Infrastructure numérique',
@@ -33,6 +34,19 @@ const ROLES = [
 ] as const;
 
 const STORAGE_KEY = 'annex21_onboarding_org';
+
+function markOnboardingDone() {
+  try {
+    sessionStorage.setItem(ONBOARDING_DONE_KEY, '1');
+  } catch {
+    /* sessionStorage indisponible */
+  }
+  try {
+    localStorage.setItem(ONBOARDING_DONE_KEY, '1');
+  } catch {
+    /* localStorage indisponible */
+  }
+}
 
 export default function OnboardingOrgPage() {
   const router = useRouter();
@@ -74,6 +88,7 @@ export default function OnboardingOrgPage() {
     } catch {
       /* sessionStorage indisponible */
     }
+    markOnboardingDone();
     router.push('/app');
   }
 
