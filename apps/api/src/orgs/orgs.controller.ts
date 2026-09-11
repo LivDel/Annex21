@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { AuthStubGuard } from '../common/auth-stub.guard';
+import { AppAuthGuard } from '../common/app-auth.guard';
 import { CreateOrgDto } from './dto/create-org.dto';
 import { OrgsService } from './orgs.service';
 
 @Controller('orgs')
-@UseGuards(AuthStubGuard)
+@UseGuards(AppAuthGuard)
 export class OrgsController {
   constructor(private readonly orgs: OrgsService) {}
 
