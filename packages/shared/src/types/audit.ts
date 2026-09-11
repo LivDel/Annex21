@@ -11,7 +11,9 @@ export type AuditAction =
   | 'incident.closed'
   | 'trust.draft.updated'
   | 'trust.published'
-  | 'trust.unpublished';
+  | 'trust.unpublished'
+  | 'billing.status_changed'
+  | 'billing.checkout_created';
 
 export interface AuditEvent {
   id: string;

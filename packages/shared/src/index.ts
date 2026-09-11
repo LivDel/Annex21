@@ -79,3 +79,11 @@ export type {
 } from './types/incident';
 
 export type { AuditAction, AuditEvent } from './types/audit';
+
+export type {
+  BillingStatus,
+  OrgBilling,
+  BillingStatusResponse,
+  CreateCheckoutRequest,
+  CreateCheckoutResponse,
+} from './types/billing';
