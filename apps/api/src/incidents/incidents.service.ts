@@ -1,10 +1,11 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Incident, IncidentStep, IncidentSlaCountdown } from '@annex21/shared';
-import { incidents } from '../common/in-memory.store';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 import { AuditService } from '../audit/audit.service';
 import { PlaybooksService } from '../playbooks/playbooks.service';
 import { EvidenceService } from '../evidence/evidence.service';
@@ -14,32 +15,29 @@ import { buildSla, countdownFor } from './sla';
 @Injectable()
 export class IncidentsService {
   constructor(
+    @Inject(DOMAIN_STORE) private readonly store: DomainStore,
     private readonly audit: AuditService,
     private readonly playbooks: PlaybooksService,
     private readonly evidence: EvidenceService,
   ) {}
 
-  list(orgId?: string): Incident[] {
-    const rows = orgId
-      ? incidents.filter((i) => i.orgId === orgId)
-      : [...incidents];
-    return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  list(orgId?: string): Promise<Incident[]> {
+    return this.store.listIncidents(orgId);
   }
 
-  getById(id: string): Incident {
-    const row = incidents.find((i) => i.id === id);
+  async getById(id: string): Promise<Incident> {
+    const row = await this.store.getIncident(id);
     if (!row) throw new NotFoundException(`Incident ${id} introuvable`);
     return row;
   }
 
-  openSlaCountdowns(orgId?: string): IncidentSlaCountdown[] {
-    return this.list(orgId)
-      .filter((i) => i.status === 'open')
-      .map((i) => countdownFor(i));
+  async openSlaCountdowns(orgId?: string): Promise<IncidentSlaCountdown[]> {
+    const rows = await this.list(orgId);
+    return rows.filter((i) => i.status === 'open').map((i) => countdownFor(i));
   }
 
-  open(dto: OpenIncidentDto, actorUserId?: string): Incident {
-    const template = this.playbooks.getTemplate(dto.playbookTemplateId);
+  async open(dto: OpenIncidentDto, actorUserId?: string): Promise<Incident> {
+    const template = await this.playbooks.getTemplate(dto.playbookTemplateId);
     const openedAt = new Date();
     const ts = openedAt.toISOString();
     const incidentId = `inc_${Date.now()}`;
@@ -70,36 +68,35 @@ export class IncidentsService {
       createdAt: ts,
       updatedAt: ts,
     };
-    incidents.push(row);
+    const saved = await this.store.createIncident(row);
 
-    this.audit.append({
-      orgId: row.orgId,
+    await this.audit.append({
+      orgId: saved.orgId,
       action: 'incident.opened',
       entityType: 'incident',
-      entityId: row.id,
+      entityId: saved.id,
       actorUserId,
       payload: {
         playbookTemplateId: template.id,
-        sla: row.sla,
+        sla: saved.sla,
       },
     });
-    return row;
+    return saved;
   }
 
-  linkEvidence(
+  async linkEvidence(
     incidentId: string,
     stepId: string,
     evidenceId: string,
     actorUserId?: string,
-  ): IncidentStep {
-    const incident = this.getById(incidentId);
+  ): Promise<IncidentStep> {
+    const incident = await this.getById(incidentId);
     if (incident.status !== 'open') {
       throw new BadRequestException('Incident clôturé');
     }
     const step = incident.steps.find((s) => s.id === stepId);
     if (!step) throw new NotFoundException(`Étape ${stepId} introuvable`);
 
-    // Valide que la preuve existe (stub ids OK)
     const ev = this.evidence.getById(evidenceId);
     if (ev.orgId !== incident.orgId) {
       throw new BadRequestException('Preuve hors organisation');
@@ -117,8 +114,9 @@ export class IncidentsService {
     };
     step.evidenceLinks.push(link);
     incident.updatedAt = new Date().toISOString();
+    await this.store.saveIncident(incident);
 
-    this.audit.append({
+    await this.audit.append({
       orgId: incident.orgId,
       action: 'incident.step.evidence_linked',
       entityType: 'incident_step',
@@ -129,13 +127,13 @@ export class IncidentsService {
     return step;
   }
 
-  completeStep(
+  async completeStep(
     incidentId: string,
     stepId: string,
     evidenceIds: string[] | undefined,
     actorUserId?: string,
-  ): IncidentStep {
-    const incident = this.getById(incidentId);
+  ): Promise<IncidentStep> {
+    const incident = await this.getById(incidentId);
     if (incident.status !== 'open') {
       throw new BadRequestException('Incident clôturé');
     }
@@ -145,12 +143,16 @@ export class IncidentsService {
       throw new BadRequestException('Étape déjà complétée');
     }
 
-    // Lier d'éventuelles preuves fournies dans le body
     for (const eid of evidenceIds ?? []) {
-      this.linkEvidence(incidentId, stepId, eid, actorUserId);
+      await this.linkEvidence(incidentId, stepId, eid, actorUserId);
     }
 
-    if (step.requiresEvidence && step.evidenceLinks.length === 0) {
+    // Reload after possible linkEvidence saves
+    const fresh = await this.getById(incidentId);
+    const freshStep = fresh.steps.find((s) => s.id === stepId);
+    if (!freshStep) throw new NotFoundException(`Étape ${stepId} introuvable`);
+
+    if (freshStep.requiresEvidence && freshStep.evidenceLinks.length === 0) {
       throw new BadRequestException({
         statusCode: 400,
         error: 'EVIDENCE_REQUIRED',
@@ -159,28 +161,29 @@ export class IncidentsService {
       });
     }
 
-    step.status = 'done';
-    step.completedAt = new Date().toISOString();
-    step.completedBy = actorUserId;
-    incident.updatedAt = step.completedAt;
+    freshStep.status = 'done';
+    freshStep.completedAt = new Date().toISOString();
+    freshStep.completedBy = actorUserId;
+    fresh.updatedAt = freshStep.completedAt;
+    await this.store.saveIncident(fresh);
 
-    this.audit.append({
-      orgId: incident.orgId,
+    await this.audit.append({
+      orgId: fresh.orgId,
       action: 'incident.step.completed',
       entityType: 'incident_step',
-      entityId: step.id,
+      entityId: freshStep.id,
       actorUserId,
       payload: {
         incidentId,
-        evidenceCount: step.evidenceLinks.length,
-        window: step.window,
+        evidenceCount: freshStep.evidenceLinks.length,
+        window: freshStep.window,
       },
     });
-    return step;
+    return freshStep;
   }
 
-  close(incidentId: string, actorUserId?: string): Incident {
-    const incident = this.getById(incidentId);
+  async close(incidentId: string, actorUserId?: string): Promise<Incident> {
+    const incident = await this.getById(incidentId);
     if (incident.status === 'closed') {
       throw new BadRequestException('Incident déjà clôturé');
     }
@@ -188,18 +191,19 @@ export class IncidentsService {
     incident.status = 'closed';
     incident.closedAt = ts;
     incident.updatedAt = ts;
+    const saved = await this.store.saveIncident(incident);
 
-    this.audit.append({
-      orgId: incident.orgId,
+    await this.audit.append({
+      orgId: saved.orgId,
       action: 'incident.closed',
       entityType: 'incident',
-      entityId: incident.id,
+      entityId: saved.id,
       actorUserId,
       payload: {
-        stepsDone: incident.steps.filter((s) => s.status === 'done').length,
-        stepsTotal: incident.steps.length,
+        stepsDone: saved.steps.filter((s) => s.status === 'done').length,
+        stepsTotal: saved.steps.length,
       },
     });
-    return incident;
+    return saved;
   }
 }

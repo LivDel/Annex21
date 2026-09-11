@@ -12,15 +12,20 @@ import { AssessmentsModule } from './assessments/assessments.module';
 import { ControlsModule } from './controls/controls.module';
 import { PlaybooksModule } from './playbooks/playbooks.module';
 import { IncidentsModule } from './incidents/incidents.module';
+import { PgModule } from './db/pg.module';
+import { StoreModule } from './store/store.module';
 
 /**
  * Module racine Annex21.
  * Data residency EU (RG-10) : ConfigModule ne doit pas pointer vers des stores hors UE.
  * Assessment / incidents / evidence : uniquement via AppAuthGuard — jamais /public/trust (RG-07).
+ * Store : Postgres (DATABASE_URL / POSTGRES_*) avec fallback in-memory loggé en dev.
  */
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PgModule,
+    StoreModule,
     SessionModule,
     HealthModule,
     AuthModule,

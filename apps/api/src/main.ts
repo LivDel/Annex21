@@ -3,11 +3,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { assertEuResidency } from './common/eu-residency';
 
 async function bootstrap() {
+  // RG-10 : fail-fast avant d'écouter si DATA_RESIDENCY / régions hors UE.
+  assertEuResidency();
+
   const app = await NestFactory.create(AppModule);
 
-  // RG-10 : cet API doit être déployé in-EU (même région que Postgres / Redis / MinIO).
   app.use(cookieParser());
   app.enableCors({
     origin: process.env.API_CORS_ORIGIN ?? 'http://localhost:3000',

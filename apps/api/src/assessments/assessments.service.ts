@@ -1,10 +1,11 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type { Nis2Assessment } from '@annex21/shared';
-import { assessments } from '../common/in-memory.store';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 import { AuditService } from '../audit/audit.service';
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
 import { UpdateAssessmentDto } from './dto/update-assessment.dto';
@@ -17,35 +18,30 @@ import {
 
 @Injectable()
 export class AssessmentsService {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    @Inject(DOMAIN_STORE) private readonly store: DomainStore,
+    private readonly audit: AuditService,
+  ) {}
 
-  list(orgId?: string): Nis2Assessment[] {
-    const rows = orgId
-      ? assessments.filter((a) => a.orgId === orgId)
-      : [...assessments];
-    return rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  list(orgId?: string): Promise<Nis2Assessment[]> {
+    return this.store.listAssessments(orgId);
   }
 
-  getById(id: string): Nis2Assessment {
-    const row = assessments.find((a) => a.id === id);
+  async getById(id: string): Promise<Nis2Assessment> {
+    const row = await this.store.getAssessment(id);
     if (!row) throw new NotFoundException(`Assessment ${id} introuvable`);
     return row;
   }
 
-  create(dto: CreateAssessmentDto, actorUserId?: string): Nis2Assessment {
-    const ts = new Date().toISOString();
-    const row: Nis2Assessment = {
-      id: `asmt_${Date.now()}`,
+  async create(
+    dto: CreateAssessmentDto,
+    actorUserId?: string,
+  ): Promise<Nis2Assessment> {
+    const row = await this.store.createAssessment({
       orgId: dto.orgId,
-      status: 'draft',
-      answers: dto.answers ?? {},
-      disclaimerAck: false,
-      version: 1,
-      createdAt: ts,
-      updatedAt: ts,
-    };
-    assessments.push(row);
-    this.audit.append({
+      answers: dto.answers,
+    });
+    await this.audit.append({
       orgId: row.orgId,
       action: 'assessment.created',
       entityType: 'nis2_assessment',
@@ -55,12 +51,12 @@ export class AssessmentsService {
     return row;
   }
 
-  update(
+  async update(
     id: string,
     dto: UpdateAssessmentDto,
     actorUserId?: string,
-  ): Nis2Assessment {
-    const row = this.getById(id);
+  ): Promise<Nis2Assessment> {
+    const row = await this.getById(id);
     if (row.status === 'completed') {
       throw new BadRequestException(
         'Assessment complété — créer une nouvelle version (brouillon)',
@@ -70,19 +66,20 @@ export class AssessmentsService {
       row.answers = { ...row.answers, ...dto.answers };
     }
     row.updatedAt = new Date().toISOString();
-    this.audit.append({
-      orgId: row.orgId,
+    const saved = await this.store.saveAssessment(row);
+    await this.audit.append({
+      orgId: saved.orgId,
       action: 'assessment.updated',
       entityType: 'nis2_assessment',
-      entityId: row.id,
+      entityId: saved.id,
       actorUserId,
       payload: { keys: Object.keys(dto.answers ?? {}) },
     });
-    return row;
+    return saved;
   }
 
-  complete(id: string, actorUserId?: string): Nis2Assessment {
-    const row = this.getById(id);
+  async complete(id: string, actorUserId?: string): Promise<Nis2Assessment> {
+    const row = await this.getById(id);
     if (row.status === 'completed') {
       throw new BadRequestException('Assessment déjà complété');
     }
@@ -102,14 +99,15 @@ export class AssessmentsService {
     row.updatedAt = ts;
     row.version = row.version + 1;
 
-    this.audit.append({
-      orgId: row.orgId,
+    const saved = await this.store.saveAssessment(row);
+    await this.audit.append({
+      orgId: saved.orgId,
       action: 'assessment.completed',
       entityType: 'nis2_assessment',
-      entityId: row.id,
+      entityId: saved.id,
       actorUserId,
       payload: { scopeStatus, maturityScore, gapsCount: gaps.length },
     });
-    return row;
+    return saved;
   }
 }

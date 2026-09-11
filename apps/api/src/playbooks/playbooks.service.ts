@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PlaybookTemplate } from '@annex21/shared';
-import { playbookTemplates } from '../common/in-memory.store';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 
 /**
  * Templates FR-ANSSI immutables.
@@ -8,16 +8,15 @@ import { playbookTemplates } from '../common/in-memory.store';
  */
 @Injectable()
 export class PlaybooksService {
-  listTemplates(): PlaybookTemplate[] {
-    return playbookTemplates.map((t) => ({
-      ...t,
-      body: structuredClone(t.body),
-    }));
+  constructor(@Inject(DOMAIN_STORE) private readonly store: DomainStore) {}
+
+  listTemplates(): Promise<PlaybookTemplate[]> {
+    return this.store.listPlaybookTemplates();
   }
 
-  getTemplate(id: string): PlaybookTemplate {
-    const row = playbookTemplates.find((t) => t.id === id);
+  async getTemplate(id: string): Promise<PlaybookTemplate> {
+    const row = await this.store.getPlaybookTemplate(id);
     if (!row) throw new NotFoundException(`Playbook template ${id} introuvable`);
-    return { ...row, body: structuredClone(row.body) };
+    return row;
   }
 }

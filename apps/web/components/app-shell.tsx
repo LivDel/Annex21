@@ -4,7 +4,8 @@ import { SlaIncidentBanner } from '@/components/sla-banner';
 
 const NAV: { href: string; label: string; match: string }[] = [
   { href: '/app/assessment', label: 'Assessment', match: '/app/assessment' },
-  { href: '/app/playbooks', label: 'Contrôles', match: '/app/playbooks' },
+  { href: '/app/controls', label: 'Contrôles', match: '/app/controls' },
+  { href: '/app/playbooks', label: 'Playbooks', match: '/app/playbooks' },
   { href: '/app/incidents', label: 'Incidents', match: '/app/incidents' },
   { href: '/app/evidence', label: 'Evidence', match: '/app/evidence' },
   { href: '/app/trust-editor', label: 'Trust editor', match: '/app/trust-editor' },
@@ -14,6 +15,7 @@ const NAV: { href: string; label: string; match: string }[] = [
 export type AppNavActive =
   | '/app'
   | '/app/assessment'
+  | '/app/controls'
   | '/app/playbooks'
   | '/app/incidents'
   | '/app/evidence'

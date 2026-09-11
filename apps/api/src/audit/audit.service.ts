@@ -1,42 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { AuditAction, AuditEvent } from '@annex21/shared';
-import { auditEvents } from '../common/in-memory.store';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 
 /**
  * Journal append-only. Pas d'update / delete métier.
  * Ne jamais exposer via /public/trust (RG-07).
+ * Persisté Postgres si disponible, sinon mémoire (dev).
  */
 @Injectable()
 export class AuditService {
-  append(input: {
+  constructor(@Inject(DOMAIN_STORE) private readonly store: DomainStore) {}
+
+  async append(input: {
     orgId: string;
     action: AuditAction;
     entityType: string;
     entityId: string;
     actorUserId?: string;
     payload?: Record<string, unknown>;
-  }): AuditEvent {
-    const event: AuditEvent = {
-      id: `aud_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      orgId: input.orgId,
-      actorUserId: input.actorUserId,
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId,
-      payload: input.payload,
-      createdAt: new Date().toISOString(),
-    };
-    auditEvents.push(event);
-    return event;
+  }): Promise<AuditEvent> {
+    return this.store.appendAudit(input);
   }
 
-  list(orgId?: string, limit = 100): AuditEvent[] {
-    const rows = orgId
-      ? auditEvents.filter((e) => e.orgId === orgId)
-      : [...auditEvents];
-    return rows
-      .slice()
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, limit);
+  async list(orgId?: string, limit = 100): Promise<AuditEvent[]> {
+    return this.store.listAudit(orgId, limit);
   }
 }

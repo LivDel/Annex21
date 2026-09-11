@@ -399,7 +399,11 @@ export function AssessmentPanel() {
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
-              href="/app/playbooks"
+              href={
+                (related[0] ?? controls[0])
+                  ? `/app/controls/${(related[0] ?? controls[0]).id}`
+                  : '/app/controls'
+              }
               className="rounded-full bg-annex-deep px-4 py-2 text-sm font-semibold hover:bg-blue-700"
             >
               Traiter contrôle
@@ -418,9 +422,9 @@ export function AssessmentPanel() {
           <ul className="mt-3 divide-y divide-white/5">
             {(related.length ? related : controls.slice(0, 2)).map((c) => (
               <li key={c.id} className="flex items-center justify-between py-2.5">
-                <p className="text-sm text-white">
+                <Link href={`/app/controls/${c.id}`} className="text-sm text-white hover:text-annex-blue">
                   <span className="text-xs text-annex-mint">{c.code}</span> {c.title}
-                </p>
+                </Link>
                 <span className="text-xs text-[#CBD5E1]">
                   {c.status === 'implemented'
                     ? 'Implémenté'

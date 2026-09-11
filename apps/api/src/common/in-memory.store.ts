@@ -10,7 +10,7 @@ import type {
 } from '@annex21/shared';
 
 /**
- * Store in-memory MVP (remplacé par Postgres in-EU en durcissement).
+ * Seed + fallback in-memory (dev). Postgres via DomainStore quand DATABASE_URL/POSTGRES_* OK.
  * Seed aligné sur les maquettes : Acme Industrie SAS.
  * Assessment / incidents / evidence : jamais montés sur /public/trust (RG-07/08).
  */
