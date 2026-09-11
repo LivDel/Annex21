@@ -1,4 +1,6 @@
 /** Organisation (tenant). Données stockées in-EU (RG-10). */
+import type { BillingStatus } from './billing';
+
 export interface Organization {
   id: string;
   slug: string;
@@ -12,6 +14,11 @@ export interface Organization {
   cisoRole?: 'ciso' | 'contributor' | 'viewer' | null;
   /** ISO — set when Étape 1/2 completed (server gate source of truth) */
   onboardingCompletedAt?: string | null;
+  /** ACV billing status (Stripe sales-led) */
+  billingStatus?: BillingStatus | null;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+  billingUpdatedAt?: string | null;
 }
 
 export type MembershipRole = 'owner' | 'contributor' | 'viewer' | 'external';

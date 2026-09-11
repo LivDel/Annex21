@@ -8,11 +8,12 @@ import { fetchOnboardingStatus } from '@/lib/onboarding';
  * Server gate (client redirect): reads GET /onboarding/status first
  * (orgs.onboarding_completed_at). localStorage = cache only.
  * Incomplete → /app/onboarding (Étape 1/2). API returns 403 ONBOARDING_REQUIRED
- * on connectors / assessments / incidents / trust writes.
+ * on connectors / assessments / incidents / trust writes / billing.
  */
 export function RequireOnboarding({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [apiNote, setApiNote] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,8 +33,13 @@ export function RequireOnboarding({ children }: { children: React.ReactNode }) {
           router.replace('/app/login');
           return;
         }
-        // API down / other — fail closed to onboarding (Étape 1/2)
-        router.replace('/app/onboarding');
+        // Soft note when Session/API unavailable — then fail closed to onboarding
+        setApiNote(
+          'Session ou API indisponible — redirection vers l’onboarding.',
+        );
+        window.setTimeout(() => {
+          if (!cancelled) router.replace('/app/onboarding');
+        }, 1200);
       }
     })();
     return () => {
@@ -43,8 +49,13 @@ export function RequireOnboarding({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="surface-void flex min-h-[40vh] items-center justify-center px-4">
+      <div className="surface-void flex min-h-[40vh] flex-col items-center justify-center gap-2 px-4">
         <p className="text-sm text-[#CBD5E1]">Chargement…</p>
+        {apiNote ? (
+          <p className="max-w-sm text-center text-xs text-[#CBD5E1]/80">
+            {apiNote}
+          </p>
+        ) : null}
       </div>
     );
   }

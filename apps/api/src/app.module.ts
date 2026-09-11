@@ -15,6 +15,7 @@ import { PlaybooksModule } from './playbooks/playbooks.module';
 import { IncidentsModule } from './incidents/incidents.module';
 import { PgModule } from './db/pg.module';
 import { StoreModule } from './store/store.module';
+import { BillingModule } from './billing/billing.module';
 
 /**
  * Module racine Annex21.
@@ -22,6 +23,7 @@ import { StoreModule } from './store/store.module';
  * Assessment / incidents / evidence : uniquement via AppAuthGuard — jamais /public/trust (RG-07).
  * Onboarding server gate : orgs.onboarding_completed_at + OnboardingGuard sur connectors / assessments / incidents / trust writes.
  * Store : Postgres (DATABASE_URL / POSTGRES_*) avec fallback in-memory loggé en dev.
+ * Billing ACV : Stripe Checkout Sessions + webhooks signés (secrets EU, jamais NEXT_PUBLIC_*).
  */
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { StoreModule } from './store/store.module';
     ControlsModule,
     PlaybooksModule,
     IncidentsModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

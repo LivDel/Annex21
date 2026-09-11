@@ -1,11 +1,13 @@
 import type {
   AuditAction,
   AuditEvent,
+  BillingStatus,
   Control,
   ControlStatus,
   Incident,
   IncidentStep,
   Nis2Assessment,
+  OrgBilling,
   PlaybookTemplate,
   AssessmentAnswers,
   AssessmentGap,
@@ -51,7 +53,7 @@ export interface UpdateControlInput {
 }
 
 /**
- * Thin repository for assessment / controls / playbooks / incidents / trust / audit.
+ * Thin repository for assessment / controls / playbooks / incidents / trust / audit / billing.
  * Postgres when available; in-memory fallback for local/dev.
  * Trust drafts never leak to public routes (RG-07) — filtering is service-layer.
  */
@@ -84,6 +86,20 @@ export interface DomainStore {
 
   appendAudit(input: AppendAuditInput): Promise<AuditEvent>;
   listAudit(orgId?: string, limit?: number): Promise<AuditEvent[]>;
+
+  /** Stripe ACV billing on org/tenant (Postgres orgs + memory fallback). */
+  getBilling(orgId: string): Promise<OrgBilling | null>;
+  upsertBilling(
+    orgId: string,
+    patch: {
+      status?: BillingStatus;
+      stripeCustomerId?: string | null;
+      stripeSubscriptionId?: string | null;
+    },
+  ): Promise<OrgBilling>;
+  findOrgIdByStripeCustomer(customerId: string): Promise<string | null>;
+  /** Returns true if newly claimed (process); false if already processed (idempotent). */
+  claimWebhookEvent(eventId: string, eventType: string, orgId?: string | null): Promise<boolean>;
 }
 
 export type { IncidentStep };

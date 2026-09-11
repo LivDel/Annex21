@@ -9,7 +9,8 @@ async function bootstrap() {
   // RG-10 : fail-fast avant d'écouter si DATA_RESIDENCY / régions hors UE.
   assertEuResidency();
 
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true → req.rawBody Buffer for Stripe-Signature verification on /billing/webhook
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.use(cookieParser());
   app.enableCors({
