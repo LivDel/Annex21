@@ -100,9 +100,10 @@ export default async function PublicTrustPage({
 
           <section className="card-glass flex min-h-[180px] flex-col items-center justify-center rounded-2xl p-6 text-center">
             <div className="aurora-orb mb-3 h-12 w-12 rounded-full" />
-            <p className="text-sm font-semibold">Profil publié</p>
+            <p className="text-sm font-semibold">Profil en préparation</p>
             <p className="mt-1 max-w-[220px] text-[11px] text-slate-500">
-              Contenu approuvé uniquement. Aucune preuve brute n&apos;est exposée ici.
+              Certaines attestations et contrôles ne sont pas encore publiés. Aucune preuve
+              brute n&apos;est exposée ici.
             </p>
           </section>
         </aside>
