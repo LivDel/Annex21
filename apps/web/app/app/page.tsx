@@ -11,24 +11,30 @@ const ORGS = [
 
 export default function AppHomePage() {
   return (
-    <AppShell active="/app">
+    <AppShell active="/app/assessment">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Espace authentifié</h1>
-          <p className="text-sm text-slate-400">
-            Sélectionnez une organisation, puis connectez vos sources de preuves.
+          <div className="mb-2 inline-flex items-center gap-2">
+            <span className="rounded-full border border-annex-blue/40 bg-annex-deep/30 px-2.5 py-0.5 text-[11px] font-semibold text-annex-blue">
+              Étape 2/2
+            </span>
+            <span className="text-xs text-[#CBD5E1]">Brancher les connecteurs</span>
+          </div>
+          <h1 className="text-2xl font-semibold text-[#F8FAFC]">Onboarding preuves</h1>
+          <p className="mt-1 text-sm text-[#CBD5E1]">
+            Étape 2 = brancher Entra, Google Workspace ou AWS pour collecter des preuves (EU).
           </p>
         </div>
         <Link
           href="/app/login"
-          className="rounded-full border border-white/15 px-4 py-2 text-sm text-slate-300 hover:bg-white/5"
+          className="rounded-full border border-white/15 px-4 py-2 text-sm text-[#CBD5E1] hover:bg-white/5"
         >
           Connexion / logout
         </Link>
       </div>
 
       <section className="mb-10">
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-[#CBD5E1]">
           Organisations
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -38,8 +44,8 @@ export default function AppHomePage() {
               className="card-glass flex items-center justify-between rounded-2xl px-4 py-3"
             >
               <div>
-                <p className="font-medium text-white">{org.name}</p>
-                <p className="text-xs text-slate-400">
+                <p className="font-medium text-[#F8FAFC]">{org.name}</p>
+                <p className="text-xs text-[#CBD5E1]">
                   {org.country} · {org.slug}
                 </p>
               </div>
@@ -52,7 +58,7 @@ export default function AppHomePage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-[#CBD5E1]">
           Connecteurs
         </h2>
         <ConnectorsGrid orgId="org_acme" />

@@ -42,15 +42,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="surface-void flex min-h-screen items-center justify-center px-4">
-      <div className="card-glass w-full max-w-md rounded-2xl p-8">
-        <Logo href="/" />
-        <h1 className="mt-6 text-2xl font-semibold text-white">Connexion</h1>
-        <p className="mt-2 text-sm text-slate-400">
+    <div className="surface-void flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <Logo href="/" mark />
+      <div className="card-glass mt-8 w-full max-w-md rounded-2xl p-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-[#F8FAFC]">Connexion</h1>
+        <p className="mt-2 text-sm text-[#CBD5E1]">
           Recevez un lien magique par e-mail — aucune preuve ni secret sur le Trust public.
         </p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <label className="block text-sm text-slate-300">
+          <label className="block text-sm text-[#CBD5E1]">
             E-mail professionnel
             <input
               type="email"
@@ -58,11 +58,15 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-white outline-none ring-annex-blue focus:ring-2"
+              className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-[#F8FAFC] outline-none ring-annex-blue placeholder:text-slate-500 focus:ring-2"
               placeholder="ciso@entreprise.fr"
             />
           </label>
-          {error && <p className="text-sm text-rose-300">{error}</p>}
+          {error && (
+            <p className="text-sm font-medium" style={{ color: '#FCA5A5' }}>
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={pending}
