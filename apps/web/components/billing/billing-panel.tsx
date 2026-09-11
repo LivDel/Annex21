@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { BillingStatusResponse } from '@annex21/shared';
+import type { AcvTier, BillingStatusResponse } from '@annex21/shared';
 import {
   createBillingCheckout,
   extractApiErrors,
@@ -30,6 +30,8 @@ export function BillingPanel() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [includeFee, setIncludeFee] = useState(false);
+  /** Devis ACV signé — bande 10/20/30 (sales-led, pas freemium). */
+  const [acvTier, setAcvTier] = useState<AcvTier>('20k');
   /** Local step: empty → devis before Stripe redirect. */
   const [showDevis, setShowDevis] = useState(false);
 
@@ -57,11 +59,13 @@ export function BillingPanel() {
   async function startCheckout(opts?: {
     retry?: boolean;
     withFee?: boolean;
+    tier?: AcvTier;
   }) {
     setBusy(true);
     setError(null);
     try {
       const session = await createBillingCheckout({
+        acvTier: opts?.tier ?? acvTier,
         includeOnboardingFee: opts?.retry
           ? false
           : (opts?.withFee ?? includeFee),
@@ -96,7 +100,6 @@ export function BillingPanel() {
   const isActive = status === 'active';
   const isCanceled = status === 'canceled';
   const isPending = hasSub && status === 'pending';
-  /** Devis UI: no sub yet, or canceled → resubscribe flow. */
   const isDevis =
     showDevis &&
     !isPastDue &&
@@ -115,7 +118,6 @@ export function BillingPanel() {
         </div>
       ) : null}
 
-      {/* EMPTY (30:2) */}
       {isEmpty ? (
         <>
           <header>
@@ -163,7 +165,6 @@ export function BillingPanel() {
         </>
       ) : null}
 
-      {/* DEVIS / pending without subscription (30:45) */}
       {isDevis ? (
         <>
           <header>
@@ -195,12 +196,55 @@ export function BillingPanel() {
                 </span>
               </p>
 
+              <fieldset className="mt-5">
+                <legend className="text-sm font-medium text-white">
+                  Bande du devis ACV signé
+                </legend>
+                <p className="mt-1 text-xs text-[#CBD5E1]">
+                  Sélectionnez la bande contractualisée avec le commercial
+                  (sales-led — pas un sélecteur de tarifs self-serve).
+                </p>
+                <div
+                  className="mt-3 grid grid-cols-3 gap-2"
+                  role="radiogroup"
+                  aria-label="Bande devis ACV"
+                >
+                  {(
+                    [
+                      { tier: '10k' as AcvTier, label: '10 k€' },
+                      { tier: '20k' as AcvTier, label: '20 k€' },
+                      { tier: '30k' as AcvTier, label: '30 k€' },
+                    ] as const
+                  ).map(({ tier, label }) => {
+                    const selected = acvTier === tier;
+                    return (
+                      <button
+                        key={tier}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setAcvTier(tier)}
+                        className={
+                          selected
+                            ? 'rounded-lg border border-[#1d4ed8] bg-[#1d4ed8]/20 px-3 py-2.5 text-sm font-semibold text-white ring-1 ring-[#1d4ed8]/50'
+                            : 'rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2.5 text-sm font-medium text-[#CBD5E1] hover:bg-white/5'
+                        }
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
               <dl className="mt-6 space-y-3 border-t border-white/10 pt-4 text-sm">
                 <div className="flex justify-between gap-4">
                   <dt className="text-[#CBD5E1]">
                     Licence plateforme Annex21 (ACV)
                   </dt>
-                  <dd className="text-white">Selon devis</dd>
+                  <dd className="text-white">
+                    Devis {acvTier.replace('k', ' k€')}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-t border-white/5 pt-3">
                   <dt className="text-[#CBD5E1]">Support &amp; SLA inclus</dt>
@@ -277,7 +321,6 @@ export function BillingPanel() {
         </>
       ) : null}
 
-      {/* PAST_DUE (31:61) */}
       {isPastDue && data ? (
         <>
           <header className="flex flex-wrap items-center gap-3">
@@ -360,7 +403,6 @@ export function BillingPanel() {
         </>
       ) : null}
 
-      {/* PENDING activation (31:119) */}
       {isPending && data ? (
         <>
           <header>
@@ -417,7 +459,6 @@ export function BillingPanel() {
         </>
       ) : null}
 
-      {/* ACTIVE + factures (32:2) */}
       {isActive && data ? (
         <>
           <header className="flex flex-wrap items-center gap-3">
@@ -532,7 +573,6 @@ export function BillingPanel() {
         </>
       ) : null}
 
-      {/* CANCELED → resubscribe */}
       {showCanceledCard && data ? (
         <>
           <header className="flex flex-wrap items-center gap-3">
