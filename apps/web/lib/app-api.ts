@@ -6,7 +6,11 @@ import type {
   Control,
   Incident,
   IncidentSlaCountdown,
+  MeResponse,
   Nis2Assessment,
+  OnboardingStatus,
+  CompleteOnboardingRequest,
+  CompleteOnboardingResponse,
   PlaybookTemplate,
   AssessmentAnswers,
   TrustCenterView,
@@ -183,6 +187,23 @@ export function unpublishTrust(orgSlug: string) {
     `/trust/${encodeURIComponent(orgSlug)}/unpublish`,
     { method: 'POST', body: JSON.stringify({}) },
   );
+}
+
+
+/** Onboarding server gate (Étape 1/2) — Redis/Postgres, not browser-only. */
+export function getMe() {
+  return api<MeResponse>('/me');
+}
+
+export function getOnboardingStatus() {
+  return api<OnboardingStatus>('/onboarding/status');
+}
+
+export function postOnboardingComplete(payload: CompleteOnboardingRequest) {
+  return api<CompleteOnboardingResponse>('/onboarding/complete', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export function extractApiErrors(err: unknown): string[] {
