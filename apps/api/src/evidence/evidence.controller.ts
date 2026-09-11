@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { AuthStubGuard } from '../common/auth-stub.guard';
+import { AppAuthGuard } from '../common/app-auth.guard';
 import { CreateEvidenceDto } from './dto/create-evidence.dto';
 import { EvidenceService } from './evidence.service';
 
@@ -8,7 +8,7 @@ import { EvidenceService } from './evidence.service';
  * Aucun équivalent /public/evidence — par conception (RG-08).
  */
 @Controller('evidence')
-@UseGuards(AuthStubGuard)
+@UseGuards(AppAuthGuard)
 export class EvidenceController {
   constructor(private readonly evidence: EvidenceService) {}
 
