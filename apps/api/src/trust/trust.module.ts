@@ -5,9 +5,10 @@ import { TrustService } from './trust.service';
 import { AuthStubGuard } from '../common/auth-stub.guard';
 import { AppAuthGuard } from '../common/app-auth.guard';
 import { AuditModule } from '../audit/audit.module';
+import { OnboardingModule } from '../onboarding/onboarding.module';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, OnboardingModule],
   controllers: [TrustPublicController, TrustController],
   providers: [TrustService, AuthStubGuard, AppAuthGuard],
   exports: [TrustService],

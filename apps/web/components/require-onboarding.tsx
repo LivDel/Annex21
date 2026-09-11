@@ -2,22 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isOnboardingDone } from '@/lib/onboarding';
+import { fetchOnboardingStatus } from '@/lib/onboarding';
 
 /**
- * Soft gate: /app (Étape 2/2 connecteurs) requires annex21_onboarding_done.
- * Without the flag → redirect to /app/onboarding (Étape 1/2).
+ * Server gate (client redirect): reads GET /onboarding/status first
+ * (orgs.onboarding_completed_at). localStorage = cache only.
+ * Incomplete → /app/onboarding (Étape 1/2). API returns 403 ONBOARDING_REQUIRED
+ * on connectors / assessments / incidents / trust writes.
  */
 export function RequireOnboarding({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!isOnboardingDone()) {
-      router.replace('/app/onboarding');
-      return;
-    }
-    setReady(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await fetchOnboardingStatus();
+        if (cancelled) return;
+        if (!status.completed) {
+          router.replace('/app/onboarding');
+          return;
+        }
+        setReady(true);
+      } catch (err) {
+        if (cancelled) return;
+        const status = (err as { status?: number })?.status;
+        if (status === 401) {
+          router.replace('/app/login');
+          return;
+        }
+        // API down / other — fail closed to onboarding (Étape 1/2)
+        router.replace('/app/onboarding');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   if (!ready) {

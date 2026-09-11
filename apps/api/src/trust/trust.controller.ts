@@ -9,13 +9,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AppAuthGuard } from '../common/app-auth.guard';
+import { OnboardingGuard } from '../onboarding/onboarding.guard';
 import { PublishTrustDto } from './dto/publish-trust.dto';
 import { PatchTrustDraftDto } from './dto/patch-trust-draft.dto';
 import { TrustService } from './trust.service';
 
 /**
  * Contrôleur authentifié du Trust Center (session Redis ou stub dev).
- * Peut renvoyer un draft. Ne joint JAMAIS l'evidence (routes /evidence dédiées).
+ * GET draft/checklist : AppAuth only (read).
+ * Write routes (PATCH/publish/unpublish) : + OnboardingGuard → 403 ONBOARDING_REQUIRED.
+ * Public GET /public/trust exempt (autre controller).
  */
 @Controller('trust')
 @UseGuards(AppAuthGuard)
@@ -33,6 +36,7 @@ export class TrustController {
   }
 
   @Patch(':orgSlug')
+  @UseGuards(OnboardingGuard)
   patchDraft(
     @Param('orgSlug') orgSlug: string,
     @Body() dto: PatchTrustDraftDto,
@@ -42,6 +46,7 @@ export class TrustController {
   }
 
   @Post(':orgSlug/publish')
+  @UseGuards(OnboardingGuard)
   publish(
     @Param('orgSlug') orgSlug: string,
     @Body() dto: PublishTrustDto,
@@ -51,6 +56,7 @@ export class TrustController {
   }
 
   @Post(':orgSlug/unpublish')
+  @UseGuards(OnboardingGuard)
   unpublish(
     @Param('orgSlug') orgSlug: string,
     @Req() req: { user?: { id?: string } },
