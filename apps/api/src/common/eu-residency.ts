@@ -72,8 +72,8 @@ export function checkEuResidency(): EuResidencyResult {
 
 /**
  * Fail-fast si DATA_RESIDENCY ≠ EU, ou si une région cloud us-* / hors UE est détectée.
- * En development uniquement : si FORCE_EU_RESIDENCY_WARN=1, log un warning fort
- * au lieu de throw (jamais recommandé en prod).
+ * FORCE_EU_RESIDENCY_WARN=1 : override warning UNIQUEMENT hors production.
+ * En production : fail closed TOUJOURS — le flag warn est ignoré / interdit.
  */
 export function assertEuResidency(): void {
   const result = checkEuResidency();
@@ -85,10 +85,20 @@ export function assertEuResidency(): void {
     `Postgres / Redis / MinIO / backups doivent rester in-EU.`;
 
   const isProd = (process.env.NODE_ENV ?? 'development') === 'production';
-  const warnOnly =
-    !isProd && process.env.FORCE_EU_RESIDENCY_WARN === '1';
+  const warnFlag = process.env.FORCE_EU_RESIDENCY_WARN === '1';
 
-  if (warnOnly) {
+  // Prod path : NEVER warn-only — even if FORCE_EU_RESIDENCY_WARN is set.
+  if (isProd) {
+    if (warnFlag) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '⚠️  FORCE_EU_RESIDENCY_WARN ignoré en production — fail closed (RG-10).',
+      );
+    }
+    throw new Error(message);
+  }
+
+  if (warnFlag) {
     // eslint-disable-next-line no-console
     console.error(`⚠️  EU RESIDENCY WARNING (dev override): ${message}`);
     return;
