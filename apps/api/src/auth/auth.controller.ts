@@ -29,7 +29,8 @@ export class AuthController {
   /**
    * GET /auth/verify?token= — one-shot, cookie session httpOnly Secure SameSite=Lax.
    * ?redirect= / ?redirectUri= → 302 after allowlist (open-redirect hardening).
-   * Invalid/missing redirect → safe default /app. sinon JSON { ok, user }.
+   * Invalid/missing redirect → safe default /app/onboarding (Étape 1/2).
+   * sinon JSON { ok, user }.
    */
   @Get('verify')
   async verify(
@@ -54,7 +55,7 @@ export class AuthController {
     // Allow only relative paths starting with `/` (web origin) OR absolute URLs
     // whose origin is in AUTH_REDIRECT_ALLOWLIST (defaults: localhost:3000 + CORS web origin).
     // Reject https://evil.com, //evil.com, javascript:, data:, etc.
-    // Invalid/missing → safe default `/app` on the web origin.
+    // Invalid/missing → safe default `/app/onboarding` (force path login → Étape 1/2).
     const wantsRedirect =
       format !== 'json' && (redirect !== undefined || redirectUri !== undefined);
     if (wantsRedirect) {

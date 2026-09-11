@@ -9,9 +9,18 @@ export class ConnectConnectorDto {
   })
   roleArn?: string;
 
+  /**
+   * OAuth redirect / callback URL from client — MUST be allowlisted
+   * (same AUTH_REDIRECT_ALLOWLIST as auth verify). Arbitrary URLs rejected.
+   */
   @IsOptional()
   @IsString()
   redirectUri?: string;
+
+  /** Alias of redirectUri (open-redirect hardening applies equally). */
+  @IsOptional()
+  @IsString()
+  redirect?: string;
 
   @IsOptional()
   @IsString()
