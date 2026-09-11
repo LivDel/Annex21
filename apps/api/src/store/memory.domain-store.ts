@@ -1,8 +1,10 @@
 import type {
   AuditEvent,
+  BillingStatus,
   Control,
   Incident,
   Nis2Assessment,
+  OrgBilling,
   PlaybookTemplate,
   TrustCenterView,
   TrustDraftPatch,
@@ -15,6 +17,11 @@ import {
   playbookTemplates,
   trustCenters,
 } from '../common/in-memory.store';
+
+/** Dev-memory billing + webhook idempotency (Stripe ACV — no real keys required). */
+const billingByOrg = new Map<string, OrgBilling>();
+const claimedWebhookEvents = new Set<string>();
+
 import type {
   AppendAuditInput,
   CreateAssessmentInput,
@@ -171,5 +178,56 @@ export class MemoryDomainStore implements DomainStore {
       .slice()
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, limit);
+  }
+
+  async getBilling(orgId: string): Promise<OrgBilling | null> {
+    const row = billingByOrg.get(orgId);
+    return row ? structuredClone(row) : null;
+  }
+
+  async upsertBilling(
+    orgId: string,
+    patch: {
+      status?: BillingStatus;
+      stripeCustomerId?: string | null;
+      stripeSubscriptionId?: string | null;
+    },
+  ): Promise<OrgBilling> {
+    const prev = billingByOrg.get(orgId);
+    const stripeCustomerId =
+      patch.stripeCustomerId !== undefined
+        ? patch.stripeCustomerId
+        : (prev?.stripeCustomerId ?? null);
+    const stripeSubscriptionId =
+      patch.stripeSubscriptionId !== undefined
+        ? patch.stripeSubscriptionId
+        : (prev?.stripeSubscriptionId ?? null);
+    const next: OrgBilling = {
+      orgId,
+      status: patch.status ?? prev?.status ?? 'pending',
+      stripeCustomerId,
+      stripeSubscriptionId,
+      hasSubscription: Boolean(stripeSubscriptionId),
+      updatedAt: new Date().toISOString(),
+    };
+    billingByOrg.set(orgId, next);
+    return structuredClone(next);
+  }
+
+  async findOrgIdByStripeCustomer(customerId: string): Promise<string | null> {
+    for (const row of billingByOrg.values()) {
+      if (row.stripeCustomerId === customerId) return row.orgId;
+    }
+    return null;
+  }
+
+  async claimWebhookEvent(
+    eventId: string,
+    _eventType: string,
+    _orgId?: string | null,
+  ): Promise<boolean> {
+    if (claimedWebhookEvents.has(eventId)) return false;
+    claimedWebhookEvents.add(eventId);
+    return true;
   }
 }
