@@ -1,12 +1,14 @@
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // RG-10 : cet API doit être déployé in-EU (même région que Postgres / Redis / MinIO).
+  app.use(cookieParser());
   app.enableCors({
     origin: process.env.API_CORS_ORIGIN ?? 'http://localhost:3000',
     credentials: true,
