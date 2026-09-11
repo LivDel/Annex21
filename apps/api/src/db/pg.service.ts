@@ -12,6 +12,7 @@ import {
   auditEvents as seedAudit,
   controls as seedControls,
   incidents as seedIncidents,
+  organizations as seedOrgs,
   playbookTemplates as seedPlaybooks,
   trustCenters as seedTrust,
 } from '../common/in-memory.store';
@@ -115,6 +116,32 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
   /** Seed playbook templates + controls from in-memory fixtures if tables empty. */
   private async seedIfEmpty(): Promise<void> {
     if (!this.pool) return;
+
+    const orgsCount = await this.pool.query<{ c: string }>(
+      'SELECT COUNT(*)::text AS c FROM orgs',
+    );
+    if (Number(orgsCount.rows[0]?.c ?? 0) === 0) {
+      for (const o of seedOrgs) {
+        await this.pool.query(
+          `INSERT INTO orgs
+             (id, slug, name, country, nis2_sector, ciso_role,
+              onboarding_completed_at, created_at, updated_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7::timestamptz,$8::timestamptz,NOW())
+           ON CONFLICT (id) DO NOTHING`,
+          [
+            o.id,
+            o.slug,
+            o.name,
+            o.country,
+            o.nis2Sector ?? null,
+            o.cisoRole ?? null,
+            o.onboardingCompletedAt ?? null,
+            o.createdAt,
+          ],
+        );
+      }
+      this.logger.log(`Seed orgs: ${seedOrgs.length} row(s)`);
+    }
 
     const pb = await this.pool.query<{ c: string }>(
       'SELECT COUNT(*)::text AS c FROM playbook_templates',

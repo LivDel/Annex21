@@ -11,6 +11,7 @@ import {
 import type { Response } from 'express';
 import type { ConnectorProvider } from '@annex21/shared';
 import { AppAuthGuard } from '../common/app-auth.guard';
+import { OnboardingGuard } from '../onboarding/onboarding.guard';
 import { ConnectorsService } from './connectors.service';
 import { ConnectConnectorDto } from './dto/connect.dto';
 
@@ -19,7 +20,7 @@ export class ConnectorsController {
   constructor(private readonly connectors: ConnectorsService) {}
 
   @Get()
-  @UseGuards(AppAuthGuard)
+  @UseGuards(AppAuthGuard, OnboardingGuard)
   list(@Query('orgId') orgId?: string) {
     return this.connectors.list(orgId ?? 'org_acme');
   }
@@ -29,9 +30,10 @@ export class ConnectorsController {
    * redirectUri / redirect from body are allowlisted (sanitizeAuthRedirect /
    * AUTH_REDIRECT_ALLOWLIST) — same open-redirect hardening as GET /auth/verify.
    * Arbitrary callback URLs are rejected; OAuth falls back to API callback.
+   * Requires server-side onboarding completion (403 ONBOARDING_REQUIRED).
    */
   @Post(':provider/connect')
-  @UseGuards(AppAuthGuard)
+  @UseGuards(AppAuthGuard, OnboardingGuard)
   connect(
     @Param('provider') provider: ConnectorProvider,
     @Body() dto: ConnectConnectorDto,
@@ -42,6 +44,7 @@ export class ConnectorsController {
   /**
    * OAuth callback stub — peut être appelé sans session (redirect IdP).
    * En MVP : marque connected puis redirige vers /app.
+   * Not gated by OnboardingGuard (IdP redirect).
    */
   @Get(':provider/callback')
   async callback(
@@ -58,7 +61,7 @@ export class ConnectorsController {
   }
 
   @Post(':provider/sync')
-  @UseGuards(AppAuthGuard)
+  @UseGuards(AppAuthGuard, OnboardingGuard)
   sync(
     @Param('provider') provider: ConnectorProvider,
     @Query('orgId') orgId?: string,
@@ -68,7 +71,7 @@ export class ConnectorsController {
   }
 
   @Post(':provider/revoke')
-  @UseGuards(AppAuthGuard)
+  @UseGuards(AppAuthGuard, OnboardingGuard)
   revoke(
     @Param('provider') provider: ConnectorProvider,
     @Query('orgId') orgId?: string,

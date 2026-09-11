@@ -25,7 +25,7 @@ function resolveMigrationsDir(): string {
 
 /**
  * Apply infra/migrations/*.sql in lexical order (idempotent CREATE IF NOT EXISTS).
- * Includes 001_assessment_playbooks + 002_trust_editor.
+ * Includes 001_assessment_playbooks + 002_trust_editor + 003_orgs_onboarding.
  */
 export async function runAssessmentMigrations(pool: Pool): Promise<string> {
   const dir = resolveMigrationsDir();

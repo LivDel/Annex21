@@ -4,9 +4,10 @@ import { AssessmentsService } from './assessments.service';
 import { AuditModule } from '../audit/audit.module';
 import { AuthStubGuard } from '../common/auth-stub.guard';
 import { AppAuthGuard } from '../common/app-auth.guard';
+import { OnboardingModule } from '../onboarding/onboarding.module';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, OnboardingModule],
   controllers: [AssessmentsController],
   providers: [AssessmentsService, AuthStubGuard, AppAuthGuard],
   exports: [AssessmentsService],

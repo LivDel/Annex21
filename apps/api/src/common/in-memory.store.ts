@@ -23,6 +23,9 @@ export const organizations: Organization[] = [
     name: 'Acme SAS',
     country: 'FR',
     createdAt: now,
+    nis2Sector: null,
+    cisoRole: null,
+    onboardingCompletedAt: null,
   },
   {
     id: 'org_draft',
@@ -30,6 +33,9 @@ export const organizations: Organization[] = [
     name: 'Nordic MSP (démo brouillon)',
     country: 'DE',
     createdAt: now,
+    nis2Sector: null,
+    cisoRole: null,
+    onboardingCompletedAt: null,
   },
   {
     id: 'org_novatech',
@@ -37,6 +43,9 @@ export const organizations: Organization[] = [
     name: 'NovaTech',
     country: 'FR',
     createdAt: now,
+    nis2Sector: null,
+    cisoRole: null,
+    onboardingCompletedAt: null,
   },
 ];
 

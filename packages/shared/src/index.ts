@@ -18,7 +18,15 @@ export { evaluateTrustPublishChecklist } from './types/trust';
 
 export type { Evidence, EvidenceProvenance } from './types/evidence';
 
-export type { SessionUser, SessionRecord } from './types/session';
+export type {
+  SessionUser,
+  SessionRecord,
+  OnboardingOrg,
+  OnboardingStatus,
+  MeResponse,
+  CompleteOnboardingRequest,
+  CompleteOnboardingResponse,
+} from './types/session';
 
 export type {
   ConnectorProvider,

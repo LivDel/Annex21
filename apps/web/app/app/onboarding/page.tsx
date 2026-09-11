@@ -3,7 +3,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/logo';
-import { ONBOARDING_DONE_KEY } from '@/lib/onboarding';
+import {
+  ONBOARDING_ORG_KEY,
+  completeOnboarding,
+  fetchOnboardingStatus,
+  markOnboardingDoneLocal,
+} from '@/lib/onboarding';
 
 const NIS2_SECTORS = [
   'Infrastructure numérique',
@@ -33,63 +38,100 @@ const ROLES = [
   },
 ] as const;
 
-const STORAGE_KEY = 'annex21_onboarding_org';
-
-function markOnboardingDone() {
-  try {
-    sessionStorage.setItem(ONBOARDING_DONE_KEY, '1');
-  } catch {
-    /* sessionStorage indisponible */
-  }
-  try {
-    localStorage.setItem(ONBOARDING_DONE_KEY, '1');
-  } catch {
-    /* localStorage indisponible */
-  }
-}
-
 export default function OnboardingOrgPage() {
   const router = useRouter();
   const [orgName, setOrgName] = useState('Acme Industrie SAS');
   const [sector, setSector] = useState<string>(NIS2_SECTORS[0]);
   const [role, setRole] = useState<string>('ciso');
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        orgName?: string;
-        sector?: string;
-        role?: string;
-      };
-      if (parsed.orgName) setOrgName(parsed.orgName);
-      if (parsed.sector) setSector(parsed.sector);
-      if (parsed.role) setRole(parsed.role);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await fetchOnboardingStatus();
+        if (cancelled) return;
+        if (status.completed) {
+          router.replace('/app');
+          return;
+        }
+        if (status.org) {
+          setOrgName(status.org.name);
+          setSector(status.org.nis2Sector);
+          setRole(status.org.cisoRole);
+        }
+      } catch {
+        /* stay on form — may need login; form still usable with stub */
+      }
+      try {
+        const raw = sessionStorage.getItem(ONBOARDING_ORG_KEY);
+        if (!raw || cancelled) return;
+        const parsed = JSON.parse(raw) as {
+          orgName?: string;
+          sector?: string;
+          role?: string;
+        };
+        if (parsed.orgName) setOrgName(parsed.orgName);
+        if (parsed.sector) setSector(parsed.sector);
+        if (parsed.role) setRole(parsed.role);
+      } catch {
+        /* ignore */
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setPending(true);
+    setError(null);
+    const payload = {
+      orgName: orgName.trim(),
+      nis2Sector: sector,
+      cisoRole: role as 'ciso' | 'contributor' | 'viewer',
+    };
     try {
       sessionStorage.setItem(
-        STORAGE_KEY,
+        ONBOARDING_ORG_KEY,
         JSON.stringify({
-          orgName: orgName.trim(),
-          sector,
-          role,
+          orgName: payload.orgName,
+          sector: payload.nis2Sector,
+          role: payload.cisoRole,
           completedAt: new Date().toISOString(),
         }),
       );
     } catch {
       /* sessionStorage indisponible */
     }
-    markOnboardingDone();
-    router.push('/app');
+
+    try {
+      await completeOnboarding(payload);
+      markOnboardingDoneLocal();
+      router.push('/app');
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 401) {
+        setError('Session requise — connectez-vous pour continuer.');
+        router.push('/app/login');
+        return;
+      }
+      setError('Impossible d’enregistrer l’onboarding. Réessayez.');
+      setPending(false);
+    }
+  }
+
+  if (checking) {
+    return (
+      <div className="surface-void flex min-h-screen flex-col items-center justify-center px-4 py-10">
+        <p className="text-sm text-[#CBD5E1]">Chargement…</p>
+      </div>
+    );
   }
 
   return (
@@ -164,6 +206,12 @@ export default function OnboardingOrgPage() {
               })}
             </div>
           </fieldset>
+
+          {error ? (
+            <p className="text-sm text-red-300" role="alert">
+              {error}
+            </p>
+          ) : null}
 
           <button
             type="submit"
