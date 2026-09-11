@@ -8,7 +8,10 @@ export type AuditAction =
   | 'incident.opened'
   | 'incident.step.completed'
   | 'incident.step.evidence_linked'
-  | 'incident.closed';
+  | 'incident.closed'
+  | 'trust.draft.updated'
+  | 'trust.published'
+  | 'trust.unpublished';
 
 export interface AuditEvent {
   id: string;

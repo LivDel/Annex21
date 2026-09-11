@@ -11,7 +11,10 @@ export type {
   TrustAttestation,
   PublicTrustCenter,
   TrustCenterView,
+  TrustDraftPatch,
+  TrustPublishChecklist,
 } from './types/trust';
+export { evaluateTrustPublishChecklist } from './types/trust';
 
 export type { Evidence, EvidenceProvenance } from './types/evidence';
 
