@@ -11,7 +11,7 @@ Monorepo MVP (`pnpm` workspaces + Turbo).
 | Donnée | Stockage local (dev) | Contrainte prod |
 |--------|----------------------|-----------------|
 | Organisations, assessments, Trust | Postgres | Région EU uniquement |
-| Sessions / files d’alertes SLA | Redis | Idem |
+| Sessions / magic-links / files d’alertes SLA | Redis | Idem |
 | Preuves (evidence) | MinIO | Bucket EU, jamais exposé au Trust public |
 | Backups & logs applicatifs sensibles | — | EU only, pas de replica US |
 
@@ -20,6 +20,31 @@ Monorepo MVP (`pnpm` workspaces + Turbo).
 - **Draft ≠ public** (RG-07) : `GET /public/trust/:orgSlug` ne renvoie que les Trust **published**.
 
 Ne pas pointer `POSTGRES_*`, Redis ou MinIO vers un cloud hors UE en production.
+
+## Auth (magic-link + sessions Redis)
+
+- `POST /auth/magic-link` `{ email }` — **toujours 200** (pas d’énumération). Envoi Brevo EU si `BREVO_*` configuré ; sinon stub log en dev (+ `devToken`).
+- `GET /auth/verify?token=` — one-shot (hash Redis TTL 15 min), crée session opaque Redis (7 j), cookie `httpOnly` / `Secure` (prod) / `SameSite=Lax`. Redirect `?redirect=` allowlisté (`AUTH_REDIRECT_ALLOWLIST`, open-redirect hardening) ; invalide → `/app`.
+- `POST /auth/logout` — destroy session + clear cookie.
+- Routes protégées : `SessionGuard` (cookie Redis). Stub Bearer `annex21-dev-stub` **uniquement** si `AUTH_ALLOW_STUB=true` **et** `NODE_ENV=development`.
+- Fallback in-memory Redis **uniquement** en development (warning console).
+
+## Connecteurs MVP
+
+Providers : **entra** | **google_workspace** | **aws**.
+
+| Provider | Auth | Scopes / notes |
+|----------|------|----------------|
+| Entra | OAuth | `openid offline_access User.Read AuditLog.Read.All` — **jamais** `Directory.Read.All` — UX « lecture journaux d’audit » |
+| Google Workspace | OAuth | `admin.directory.user.readonly` + `admin.reports.audit.readonly` |
+| AWS | AssumeRole | ExternalId + ARN (pas OAuth user) |
+
+- Secrets chiffrés AES-GCM (`CONNECTOR_SECRETS_KEY`) — jamais loggés.
+- États : `disconnected` \| `connecting` \| `connected` \| `syncing` \| `error`.
+- Sync stub → métadonnées evidence MinIO path `eu/…`. Erreur `CONNECTOR_NO_DATA_EXPORTED` → « aucune donnée exportée » + Retry.
+- Revoke : delete secrets, conserve evidence historique (stale).
+
+API : `GET /connectors`, `POST /connectors/:provider/connect|sync|revoke`, `GET /connectors/:provider/callback`.
 
 ## Prérequis
 
@@ -55,8 +80,12 @@ Variables : copier `.env.example` vers `.env` (aucun secret de prod dans l’exe
 | Route | Rôle |
 |-------|------|
 | `/` | Landing (hero, value props, CTA, bandeau SLA placeholder) |
-| `/trust/[org]` | Trust Center public — états **DRAFT** vs **PUBLIC** très visibles. Brouillon : *« Brouillon — non publié »*. **Aucune preuve brute.** |
-| `/app` | Shell authentifié (placeholder) : Assessment, Playbooks ANSSI, Evidence, Trust editor |
+| `/trust/[org]` | Trust Center public — états **DRAFT** vs **PUBLIC**. **Aucune preuve brute.** |
+| `/app/login` | Demande magic-link |
+| `/app/login/check-email` | Confirmation générique (anti-énumération) |
+| `/app/onboarding` | Étape 1/2 — organisation (secteur NIS2, rôle CISO) |
+| `/app` | Étape 2/2 — org picker stub + grille connecteurs (5 états) |
+| `/app/*` | Assessment, Playbooks ANSSI, Evidence, Trust editor |
 
 Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouillon).
 
@@ -65,23 +94,23 @@ Démos Trust (sans API) : `/trust/acme` (public) et `/trust/demo-draft` (brouill
 | Méthode | Chemin | Notes |
 |---------|--------|--------|
 | `GET` | `/health` | Liveness |
-| `POST` | `/auth/magic-link/request` | Stub magic-link |
-| `GET` | `/auth/magic-link/verify` | Stub verify |
+| `POST` | `/auth/magic-link` | Magic-link (toujours 200) |
+| `GET` | `/auth/verify` | One-shot + cookie session |
+| `POST` | `/auth/logout` | Destroy session |
 | `GET` | `/public/trust/:orgSlug` | **Published only** — 404 si draft |
-| `GET` | `/trust/:orgSlug` | Stub auth — peut renvoyer un draft (sans evidence) |
-| `POST` | `/trust/:orgSlug/publish` | Passe `draft → published` (audit stub) |
+| `GET` | `/trust/:orgSlug` | Auth — draft OK (sans evidence) |
+| `POST` | `/trust/:orgSlug/publish` | `draft → published` |
 | `GET/POST` | `/evidence`, `/evidence/:id` | **Privé uniquement** |
-| `GET/POST` | `/orgs`, `/orgs/:slug` | Stub organisations |
-
-Header stub auth : `Authorization: Bearer annex21-dev-stub` (voir `.env.example`).
+| `GET/POST` | `/orgs`, `/orgs/:slug` | Organisations |
+| `GET/POST` | `/connectors…` | Connecteurs MVP |
 
 ## Structure
 
 ```
 annex21/
 ├── apps/web          Next.js 15 App Router + Tailwind
-├── apps/api          NestJS + class-validator
-├── packages/shared   Types / DTOs (TrustStatus, Org, Evidence)
+├── apps/api          NestJS (AuthModule, SessionModule, ConnectorsModule…)
+├── packages/shared   Types / DTOs (Trust, Org, Evidence, Session, Connector)
 ├── infra/            docker-compose (postgres, redis, minio)
 ├── brand/            Identité visuelle
 └── CDC-fonctionnel.md

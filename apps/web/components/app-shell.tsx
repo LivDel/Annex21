@@ -3,6 +3,7 @@ import { Logo } from '@/components/logo';
 import { SlaIncidentBanner } from '@/components/sla-banner';
 
 const NAV: { href: string; label: string; match: string }[] = [
+  { href: '/app', label: 'Accueil', match: '/app' },
   { href: '/app/assessment', label: 'Assessment', match: '/app/assessment' },
   { href: '/app/playbooks', label: 'Contrôles', match: '/app/playbooks' },
   { href: '/app/incidents', label: 'Incidents', match: '/app/incidents' },
@@ -11,6 +12,7 @@ const NAV: { href: string; label: string; match: string }[] = [
 ];
 
 export type AppNavActive =
+  | '/app'
   | '/app/assessment'
   | '/app/playbooks'
   | '/app/incidents'
@@ -32,7 +34,10 @@ export function AppShell({
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.map((item) => {
-            const activeHere = item.match === active;
+            const activeHere =
+              item.match === '/app'
+                ? active === '/app'
+                : item.match === active;
             return (
               <Link
                 key={`${item.label}-${item.match}`}

@@ -16,7 +16,7 @@
   --teal: #0ea5a4;
   --teal-bright: #2dd4bf;
   --text: #f8fafc;
-  --muted: #94a3b8;
+  --muted: #cbd5e1; /* a11y AA petits textes sur void (Julien) */
   --glass-bg: rgba(248, 250, 252, 0.06);
   --glass-border: rgba(248, 250, 252, 0.12);
   --danger: #b91c1c;
@@ -43,11 +43,11 @@ body {
 }
 
 .surface-void {
+  /* Void soft — pas d'orbes circulaires (Julien). 1–2 dégradés elliptiques très softs. */
   background-color: var(--void);
   background-image:
-    radial-gradient(ellipse 80% 55% at 70% -5%, rgba(29, 78, 216, 0.38), transparent 55%),
-    radial-gradient(ellipse 45% 40% at 10% 30%, rgba(14, 165, 164, 0.14), transparent 50%),
-    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(91, 140, 255, 0.1), transparent 55%);
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(29, 78, 216, 0.18), transparent 55%),
+    radial-gradient(ellipse 90% 60% at 100% 100%, rgba(14, 165, 164, 0.08), transparent 50%);
   background-attachment: fixed;
 }
 
@@ -64,14 +64,10 @@ body {
 }
 
 .aurora-orb {
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(91, 140, 255, 0.55) 0%,
-    rgba(45, 212, 191, 0.25) 40%,
-    transparent 70%
-  );
-  filter: blur(2px);
-  box-shadow: 0 0 60px rgba(91, 140, 255, 0.35);
+  /* Deprecated decorative ball — soft wash only if still referenced */
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(91, 140, 255, 0.2), transparent 70%);
+  filter: blur(8px);
+  box-shadow: none;
 }
 
 .card-glass {
