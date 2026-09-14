@@ -1,6 +1,14 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  FormEvent,
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import type { OrgIdentityProvider, SsoProtocol } from '@annex21/shared';
 import {
   extractApiErrors,
@@ -34,6 +42,7 @@ export function SsoWizard() {
   const [revokeOpen, setRevokeOpen] = useState(false);
   const revokeTitleId = useId();
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const revokeConfirmRef = useRef<HTMLButtonElement>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -66,6 +75,28 @@ export function SsoWizard() {
   useEffect(() => {
     if (revokeOpen) cancelRef.current?.focus();
   }, [revokeOpen]);
+
+  function onRevokeDialogKeyDown(ev: KeyboardEvent<HTMLDivElement>) {
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      setRevokeOpen(false);
+      return;
+    }
+    if (ev.key !== 'Tab') return;
+    const cancel = cancelRef.current;
+    const confirm = revokeConfirmRef.current;
+    if (!cancel || !confirm) return;
+    // Focus trap: Annuler ↔ Révoquer only
+    ev.preventDefault();
+    if (ev.shiftKey) {
+      if (document.activeElement === cancel) confirm.focus();
+      else cancel.focus();
+    } else if (document.activeElement === confirm) {
+      cancel.focus();
+    } else {
+      confirm.focus();
+    }
+  }
 
   function validateActiveMode(): boolean {
     const next: Record<string, string> = {};
@@ -382,9 +413,7 @@ export function SsoWizard() {
           aria-modal="true"
           aria-labelledby={revokeTitleId}
           data-luix-frame="06-revoke-modal"
-          onKeyDown={(ev) => {
-            if (ev.key === 'Escape') setRevokeOpen(false);
-          }}
+          onKeyDown={onRevokeDialogKeyDown}
         >
           <div className="card-glass w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-xl">
             <h3
@@ -407,6 +436,7 @@ export function SsoWizard() {
                 Annuler
               </button>
               <button
+                ref={revokeConfirmRef}
                 type="button"
                 onClick={() => void onRevoke()}
                 className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500"
