@@ -19,6 +19,7 @@ import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 /**
  * Owner/Admin SSO wizard + members mapping.
  * Roles CDC: owner|admin|member|viewer — no JIT admin.
+ * Org scope: :orgId must match session.orgId OR verified org_members row.
  */
 @Controller('orgs/:orgId/sso')
 @UseGuards(AppAuthGuard, OnboardingGuard)
@@ -26,45 +27,47 @@ export class SsoAdminController {
   constructor(private readonly sso: SsoService) {}
 
   @Get('idp')
-  getIdp(@Param('orgId') orgId: string) {
+  async getIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
+    await this.sso.assertOrgAccess(orgId, req, { mutate: false });
     return this.sso.getIdp(orgId);
   }
 
   @Put('idp')
-  upsertIdp(
+  async upsertIdp(
     @Param('orgId') orgId: string,
     @Body() dto: UpsertIdpDto,
     @Req() req: AuthedRequest,
   ) {
-    this.sso.assertOwnerOrAdmin(req.user?.role);
+    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
     return this.sso.upsertIdp(orgId, dto);
   }
 
   @Post('idp/test')
-  testIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
-    this.sso.assertOwnerOrAdmin(req.user?.role);
+  async testIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
+    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
     return this.sso.testIdp(orgId);
   }
 
   @Post('idp/revoke')
-  revokeIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
-    this.sso.assertOwnerOrAdmin(req.user?.role);
+  async revokeIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
+    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
     return this.sso.revokeIdp(orgId);
   }
 
   @Get('members')
-  listMembers(@Param('orgId') orgId: string) {
+  async listMembers(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
+    await this.sso.assertOrgAccess(orgId, req, { mutate: false });
     return this.sso.listMembers(orgId);
   }
 
   @Patch('members/:memberId')
-  updateRole(
+  async updateRole(
     @Param('orgId') orgId: string,
     @Param('memberId') memberId: string,
     @Body() dto: UpdateMemberRoleDto,
     @Req() req: AuthedRequest,
   ) {
-    this.sso.assertOwnerOrAdmin(req.user?.role);
+    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
     return this.sso.updateMemberRole(orgId, memberId, dto.role);
   }
 }

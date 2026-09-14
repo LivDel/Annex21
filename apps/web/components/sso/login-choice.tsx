@@ -23,27 +23,8 @@ export function LoginChoice() {
       .then((r) => r.json())
       .then((d: SsoLoginOptionsResponse) => setOptions(d))
       .catch(() =>
-        setOptions({
-          options: [
-            {
-              idpId: 'preset_entra',
-              orgId: 'org_acme',
-              protocol: 'oidc',
-              provider: 'entra',
-              displayName: 'Entra ID',
-              startPath: '/auth/sso/oidc/start?provider=entra',
-            },
-            {
-              idpId: 'preset_google',
-              orgId: 'org_acme',
-              protocol: 'oidc',
-              provider: 'google',
-              displayName: 'Google Workspace',
-              startPath: '/auth/sso/oidc/start?provider=google',
-            },
-          ],
-          magicLinkAvailable: true,
-        }),
+        // No client-side IdP presets — API owns production gating
+        setOptions({ options: [], magicLinkAvailable: true }),
       );
   }, []);
 
