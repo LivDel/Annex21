@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
@@ -12,9 +13,11 @@ import {
 import { AppAuthGuard } from '../common/app-auth.guard';
 import { OnboardingGuard } from '../onboarding/onboarding.guard';
 import type { AuthedRequest } from '../session/session.guard';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 import { SsoService } from './sso.service';
 import { UpsertIdpDto } from './dto/upsert-idp.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { assertSsoOrgAccess } from './sso-org-access';
 
 /**
  * Owner/Admin SSO wizard + members mapping.
@@ -24,11 +27,14 @@ import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 @Controller('orgs/:orgId/sso')
 @UseGuards(AppAuthGuard, OnboardingGuard)
 export class SsoAdminController {
-  constructor(private readonly sso: SsoService) {}
+  constructor(
+    private readonly sso: SsoService,
+    @Inject(DOMAIN_STORE) private readonly store: DomainStore,
+  ) {}
 
   @Get('idp')
   async getIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
-    await this.sso.assertOrgAccess(orgId, req, { mutate: false });
+    await assertSsoOrgAccess(this.store, orgId, req, { mutate: false });
     return this.sso.getIdp(orgId);
   }
 
@@ -38,25 +44,25 @@ export class SsoAdminController {
     @Body() dto: UpsertIdpDto,
     @Req() req: AuthedRequest,
   ) {
-    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
+    await assertSsoOrgAccess(this.store, orgId, req, { mutate: true });
     return this.sso.upsertIdp(orgId, dto);
   }
 
   @Post('idp/test')
   async testIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
-    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
+    await assertSsoOrgAccess(this.store, orgId, req, { mutate: true });
     return this.sso.testIdp(orgId);
   }
 
   @Post('idp/revoke')
   async revokeIdp(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
-    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
+    await assertSsoOrgAccess(this.store, orgId, req, { mutate: true });
     return this.sso.revokeIdp(orgId);
   }
 
   @Get('members')
   async listMembers(@Param('orgId') orgId: string, @Req() req: AuthedRequest) {
-    await this.sso.assertOrgAccess(orgId, req, { mutate: false });
+    await assertSsoOrgAccess(this.store, orgId, req, { mutate: false });
     return this.sso.listMembers(orgId);
   }
 
@@ -67,7 +73,7 @@ export class SsoAdminController {
     @Body() dto: UpdateMemberRoleDto,
     @Req() req: AuthedRequest,
   ) {
-    await this.sso.assertOrgAccess(orgId, req, { mutate: true });
+    await assertSsoOrgAccess(this.store, orgId, req, { mutate: true });
     return this.sso.updateMemberRole(orgId, memberId, dto.role);
   }
 }
