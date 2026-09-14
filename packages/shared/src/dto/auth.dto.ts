@@ -17,7 +17,7 @@ export interface MagicLinkVerifyResponse {
   user: {
     id: string;
     email: string;
-    role: 'owner' | 'contributor' | 'viewer';
+    role: 'owner' | 'admin' | 'member' | 'viewer';
   };
 }
 

@@ -112,6 +112,47 @@ class DomainStoreProxy implements DomainStore {
   ) {
     return this.impl.claimWebhookEvent(eventId, eventType, orgId);
   }
+
+  getIdp(orgId: string) {
+    return this.impl.getIdp(orgId);
+  }
+  getIdpById(idpId: string) {
+    return this.impl.getIdpById(idpId);
+  }
+  listConnectedIdps() {
+    return this.impl.listConnectedIdps();
+  }
+  upsertIdp(
+    orgId: string,
+    input: Parameters<DomainStore['upsertIdp']>[1],
+  ) {
+    return this.impl.upsertIdp(orgId, input);
+  }
+  updateIdpStatus(
+    idpId: string,
+    patch: Parameters<DomainStore['updateIdpStatus']>[1],
+  ) {
+    return this.impl.updateIdpStatus(idpId, patch);
+  }
+  revokeIdp(idpId: string) {
+    return this.impl.revokeIdp(idpId);
+  }
+  listMembers(orgId: string) {
+    return this.impl.listMembers(orgId);
+  }
+  getMemberByEmail(orgId: string, email: string) {
+    return this.impl.getMemberByEmail(orgId, email);
+  }
+  upsertMember(input: Parameters<DomainStore['upsertMember']>[0]) {
+    return this.impl.upsertMember(input);
+  }
+  updateMemberRole(
+    orgId: string,
+    memberId: string,
+    role: Parameters<DomainStore['updateMemberRole']>[2],
+  ) {
+    return this.impl.updateMemberRole(orgId, memberId, role);
+  }
 }
 
 @Global()

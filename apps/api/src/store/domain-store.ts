@@ -15,6 +15,12 @@ import type {
   Nis2Domain,
   TrustCenterView,
   TrustDraftPatch,
+  OrgIdentityProvider,
+  OrgMember,
+  OrgMemberRole,
+  IdpStatus,
+  SsoProtocol,
+  SsoProviderKind,
 } from '@annex21/shared';
 
 export const DOMAIN_STORE = Symbol('DOMAIN_STORE');
@@ -100,6 +106,58 @@ export interface DomainStore {
   findOrgIdByStripeCustomer(customerId: string): Promise<string | null>;
   /** Returns true if newly claimed (process); false if already processed (idempotent). */
   claimWebhookEvent(eventId: string, eventType: string, orgId?: string | null): Promise<boolean>;
+
+  // --- SSO V1: IdP + org members ---
+  getIdp(orgId: string): Promise<OrgIdentityProvider | null>;
+  getIdpById(idpId: string): Promise<(OrgIdentityProvider & { clientSecretEnc?: string | null; metadataXml?: string | null }) | null>;
+  listConnectedIdps(): Promise<OrgIdentityProvider[]>;
+  upsertIdp(
+    orgId: string,
+    input: {
+      id?: string;
+      protocol: SsoProtocol;
+      provider: SsoProviderKind;
+      displayName: string;
+      issuer?: string | null;
+      clientId?: string | null;
+      clientSecretEnc?: string | null;
+      metadataUrl?: string | null;
+      metadataXml?: string | null;
+      spEntityId?: string | null;
+      acsUrl?: string | null;
+      domains?: string[];
+      status?: IdpStatus;
+      lastError?: string | null;
+    },
+  ): Promise<OrgIdentityProvider>;
+  updateIdpStatus(
+    idpId: string,
+    patch: {
+      status: IdpStatus;
+      lastError?: string | null;
+      testedAt?: string | null;
+      connectedAt?: string | null;
+    },
+  ): Promise<OrgIdentityProvider | null>;
+  revokeIdp(idpId: string): Promise<OrgIdentityProvider | null>;
+
+  listMembers(orgId: string): Promise<OrgMember[]>;
+  getMemberByEmail(orgId: string, email: string): Promise<OrgMember | null>;
+  upsertMember(input: {
+    orgId: string;
+    userId: string;
+    email: string;
+    displayName?: string | null;
+    role?: OrgMemberRole;
+    pendingAssignment?: boolean;
+    idpSubject?: string | null;
+    idpId?: string | null;
+  }): Promise<OrgMember>;
+  updateMemberRole(
+    orgId: string,
+    memberId: string,
+    role: OrgMemberRole,
+  ): Promise<OrgMember | null>;
 }
 
 export type { IncidentStep };

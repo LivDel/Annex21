@@ -88,3 +88,17 @@ export type {
   CreateCheckoutRequest,
   CreateCheckoutResponse,
 } from './types/billing';
+
+export type {
+  OrgMemberRole,
+  SsoProtocol,
+  SsoProviderKind,
+  IdpStatus,
+  OrgIdentityProvider,
+  OrgMember,
+  SsoLoginOption,
+  SsoLoginOptionsResponse,
+  UpsertIdpRequest,
+  TestIdpResponse,
+  UpdateMemberRoleRequest,
+} from './types/sso';

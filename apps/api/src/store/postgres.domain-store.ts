@@ -4,15 +4,21 @@ import type {
   AuditEvent,
   BillingStatus,
   Control,
+  IdpStatus,
   Incident,
   IncidentStep,
   IncidentStepEvidenceLink,
   Nis2Assessment,
   Nis2Domain,
   OrgBilling,
+  OrgIdentityProvider,
+  OrgMember,
+  OrgMemberRole,
   PlaybookTemplate,
   PlaybookTemplateBody,
   ScopeStatus,
+  SsoProtocol,
+  SsoProviderKind,
   TrustAttestation,
   TrustCenterView,
   TrustControlSummary,
@@ -619,7 +625,6 @@ export class PostgresDomainStore implements DomainStore {
     if (res.rows[0]) {
       return mapBilling(res.rows[0] as Record<string, unknown>);
     }
-    // Org row missing (dev edge): return ephemeral snapshot without inventing slug conflicts.
     const stripeSubscriptionId = patch.stripeSubscriptionId ?? null;
     return {
       orgId,
@@ -652,5 +657,293 @@ export class PostgresDomainStore implements DomainStore {
       [eventId, eventType, orgId ?? null],
     );
     return Boolean(res.rows[0]);
+  }
+
+
+  private mapIdp(r: Record<string, unknown>): OrgIdentityProvider {
+    return {
+      id: String(r.id),
+      orgId: String(r.org_id),
+      protocol: r.protocol as OrgIdentityProvider['protocol'],
+      provider: r.provider as OrgIdentityProvider['provider'],
+      status: r.status as OrgIdentityProvider['status'],
+      displayName: String(r.display_name),
+      issuer: r.issuer != null ? String(r.issuer) : null,
+      clientId: r.client_id != null ? String(r.client_id) : null,
+      hasClientSecret: Boolean(r.client_secret_enc),
+      metadataUrl: r.metadata_url != null ? String(r.metadata_url) : null,
+      spEntityId: r.sp_entity_id != null ? String(r.sp_entity_id) : null,
+      acsUrl: r.acs_url != null ? String(r.acs_url) : null,
+      domains: Array.isArray(r.domains)
+        ? (r.domains as string[])
+        : [],
+      lastError: r.last_error != null ? String(r.last_error) : null,
+      testedAt: r.tested_at
+        ? new Date(String(r.tested_at)).toISOString()
+        : null,
+      connectedAt: r.connected_at
+        ? new Date(String(r.connected_at)).toISOString()
+        : null,
+      createdAt: new Date(String(r.created_at)).toISOString(),
+      updatedAt: new Date(String(r.updated_at)).toISOString(),
+    };
+  }
+
+  private mapMember(r: Record<string, unknown>): OrgMember {
+    return {
+      id: String(r.id),
+      orgId: String(r.org_id),
+      userId: String(r.user_id),
+      email: String(r.email),
+      displayName: r.display_name != null ? String(r.display_name) : null,
+      role: r.role as OrgMemberRole,
+      pendingAssignment: Boolean(r.pending_assignment),
+      idpSubject: r.idp_subject != null ? String(r.idp_subject) : null,
+      idpId: r.idp_id != null ? String(r.idp_id) : null,
+      createdAt: new Date(String(r.created_at)).toISOString(),
+      updatedAt: new Date(String(r.updated_at)).toISOString(),
+    };
+  }
+
+  async getIdp(orgId: string): Promise<OrgIdentityProvider | null> {
+    const res = await this.pg.query(
+      `SELECT * FROM org_identity_providers
+        WHERE org_id = $1 AND status <> 'revoked'
+        ORDER BY updated_at DESC LIMIT 1`,
+      [orgId],
+    );
+    if (!res.rows[0]) return null;
+    return this.mapIdp(res.rows[0] as Record<string, unknown>);
+  }
+
+  async getIdpById(
+    idpId: string,
+  ): Promise<
+    | (OrgIdentityProvider & {
+        clientSecretEnc?: string | null;
+        metadataXml?: string | null;
+      })
+    | null
+  > {
+    const res = await this.pg.query(
+      `SELECT * FROM org_identity_providers WHERE id = $1`,
+      [idpId],
+    );
+    if (!res.rows[0]) return null;
+    const r = res.rows[0] as Record<string, unknown>;
+    return {
+      ...this.mapIdp(r),
+      clientSecretEnc:
+        r.client_secret_enc != null ? String(r.client_secret_enc) : null,
+      metadataXml: r.metadata_xml != null ? String(r.metadata_xml) : null,
+    };
+  }
+
+  async listConnectedIdps(): Promise<OrgIdentityProvider[]> {
+    const res = await this.pg.query(
+      `SELECT * FROM org_identity_providers WHERE status = 'connected'`,
+    );
+    return res.rows.map((r) => this.mapIdp(r as Record<string, unknown>));
+  }
+
+  async upsertIdp(
+    orgId: string,
+    input: {
+      id?: string;
+      protocol: SsoProtocol;
+      provider: SsoProviderKind;
+      displayName: string;
+      issuer?: string | null;
+      clientId?: string | null;
+      clientSecretEnc?: string | null;
+      metadataUrl?: string | null;
+      metadataXml?: string | null;
+      spEntityId?: string | null;
+      acsUrl?: string | null;
+      domains?: string[];
+      status?: IdpStatus;
+      lastError?: string | null;
+    },
+  ): Promise<OrgIdentityProvider> {
+    const existing = await this.getIdp(orgId);
+    const id = input.id ?? existing?.id ?? `idp_${Date.now().toString(36)}`;
+
+    await this.pg.query(
+      `UPDATE org_identity_providers
+          SET status = 'revoked', updated_at = NOW()
+        WHERE org_id = $1 AND id <> $2 AND status <> 'revoked'`,
+      [orgId, id],
+    );
+
+    const secretEnc =
+      input.clientSecretEnc !== undefined
+        ? input.clientSecretEnc
+        : undefined;
+
+    const res = await this.pg.query(
+      `INSERT INTO org_identity_providers (
+         id, org_id, protocol, provider, status, display_name,
+         issuer, client_id, client_secret_enc, metadata_url, metadata_xml,
+         sp_entity_id, acs_url, domains, last_error
+       ) VALUES (
+         $1,$2,$3,$4,COALESCE($5,'draft'),$6,
+         $7,$8,$9,$10,$11,$12,$13,COALESCE($14,'{}'),$15
+       )
+       ON CONFLICT (id) DO UPDATE SET
+         protocol = EXCLUDED.protocol,
+         provider = EXCLUDED.provider,
+         status = COALESCE($5, org_identity_providers.status),
+         display_name = EXCLUDED.display_name,
+         issuer = COALESCE($7, org_identity_providers.issuer),
+         client_id = COALESCE($8, org_identity_providers.client_id),
+         client_secret_enc = CASE
+           WHEN $16::boolean THEN $9
+           ELSE org_identity_providers.client_secret_enc
+         END,
+         metadata_url = COALESCE($10, org_identity_providers.metadata_url),
+         metadata_xml = COALESCE($11, org_identity_providers.metadata_xml),
+         sp_entity_id = COALESCE($12, org_identity_providers.sp_entity_id),
+         acs_url = COALESCE($13, org_identity_providers.acs_url),
+         domains = COALESCE($14, org_identity_providers.domains),
+         last_error = COALESCE($15, org_identity_providers.last_error),
+         updated_at = NOW()
+       RETURNING *`,
+      [
+        id,
+        orgId,
+        input.protocol,
+        input.provider,
+        input.status ?? null,
+        input.displayName,
+        input.issuer ?? null,
+        input.clientId ?? null,
+        secretEnc !== undefined ? secretEnc : null,
+        input.metadataUrl ?? null,
+        input.metadataXml ?? null,
+        input.spEntityId ?? null,
+        input.acsUrl ?? null,
+        input.domains ?? null,
+        input.lastError ?? null,
+        secretEnc !== undefined,
+      ],
+    );
+    return this.mapIdp(res.rows[0] as Record<string, unknown>);
+  }
+
+  async updateIdpStatus(
+    idpId: string,
+    patch: {
+      status: IdpStatus;
+      lastError?: string | null;
+      testedAt?: string | null;
+      connectedAt?: string | null;
+    },
+  ): Promise<OrgIdentityProvider | null> {
+    const res = await this.pg.query(
+      `UPDATE org_identity_providers SET
+         status = $2,
+         last_error = CASE WHEN $3::boolean THEN $4 ELSE last_error END,
+         tested_at = CASE WHEN $5::boolean THEN $6::timestamptz ELSE tested_at END,
+         connected_at = CASE WHEN $7::boolean THEN $8::timestamptz ELSE connected_at END,
+         updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [
+        idpId,
+        patch.status,
+        patch.lastError !== undefined,
+        patch.lastError ?? null,
+        patch.testedAt !== undefined,
+        patch.testedAt ?? null,
+        patch.connectedAt !== undefined,
+        patch.connectedAt ?? null,
+      ],
+    );
+    if (!res.rows[0]) return null;
+    return this.mapIdp(res.rows[0] as Record<string, unknown>);
+  }
+
+  async revokeIdp(idpId: string): Promise<OrgIdentityProvider | null> {
+    return this.updateIdpStatus(idpId, { status: 'revoked', lastError: null });
+  }
+
+  async listMembers(orgId: string): Promise<OrgMember[]> {
+    const res = await this.pg.query(
+      `SELECT * FROM org_members WHERE org_id = $1 ORDER BY created_at ASC`,
+      [orgId],
+    );
+    return res.rows.map((r) => this.mapMember(r as Record<string, unknown>));
+  }
+
+  async getMemberByEmail(
+    orgId: string,
+    email: string,
+  ): Promise<OrgMember | null> {
+    const res = await this.pg.query(
+      `SELECT * FROM org_members WHERE org_id = $1 AND email = $2 LIMIT 1`,
+      [orgId, email.trim().toLowerCase()],
+    );
+    if (!res.rows[0]) return null;
+    return this.mapMember(res.rows[0] as Record<string, unknown>);
+  }
+
+  async upsertMember(input: {
+    orgId: string;
+    userId: string;
+    email: string;
+    displayName?: string | null;
+    role?: OrgMemberRole;
+    pendingAssignment?: boolean;
+    idpSubject?: string | null;
+    idpId?: string | null;
+  }): Promise<OrgMember> {
+    const email = input.email.trim().toLowerCase();
+    const role = input.role ?? 'member';
+    const pending = input.pendingAssignment ?? true;
+    const res = await this.pg.query(
+      `INSERT INTO org_members (
+         id, org_id, user_id, email, display_name, role,
+         pending_assignment, idp_subject, idp_id
+       ) VALUES (
+         $1,$2,$3,$4,$5,$6,$7,$8,$9
+       )
+       ON CONFLICT (org_id, email) DO UPDATE SET
+         user_id = EXCLUDED.user_id,
+         display_name = COALESCE(EXCLUDED.display_name, org_members.display_name),
+         idp_subject = COALESCE(EXCLUDED.idp_subject, org_members.idp_subject),
+         idp_id = COALESCE(EXCLUDED.idp_id, org_members.idp_id),
+         updated_at = NOW()
+       RETURNING *`,
+      [
+        `mem_${Date.now().toString(36)}`,
+        input.orgId,
+        input.userId,
+        email,
+        input.displayName ?? null,
+        role,
+        pending,
+        input.idpSubject ?? null,
+        input.idpId ?? null,
+      ],
+    );
+    return this.mapMember(res.rows[0] as Record<string, unknown>);
+  }
+
+  async updateMemberRole(
+    orgId: string,
+    memberId: string,
+    role: OrgMemberRole,
+  ): Promise<OrgMember | null> {
+    const res = await this.pg.query(
+      `UPDATE org_members SET
+         role = $3,
+         pending_assignment = FALSE,
+         updated_at = NOW()
+       WHERE org_id = $1 AND id = $2
+       RETURNING *`,
+      [orgId, memberId, role],
+    );
+    if (!res.rows[0]) return null;
+    return this.mapMember(res.rows[0] as Record<string, unknown>);
   }
 }

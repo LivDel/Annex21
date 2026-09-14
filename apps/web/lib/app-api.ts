@@ -19,6 +19,11 @@ import type {
   TrustCenterView,
   TrustDraftPatch,
   TrustPublishChecklist,
+  OrgIdentityProvider,
+  OrgMember,
+  OrgMemberRole,
+  UpsertIdpRequest,
+  TestIdpResponse,
 } from '@annex21/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -233,4 +238,50 @@ export function createBillingCheckout(payload: CreateCheckoutRequest) {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+
+// --- SSO V1 ---
+export function getSsoIdp(orgId = DEFAULT_ORG) {
+  return api<OrgIdentityProvider | null>(
+    `/orgs/${encodeURIComponent(orgId)}/sso/idp`,
+  );
+}
+
+export function upsertSsoIdp(orgId: string, body: UpsertIdpRequest) {
+  return api<OrgIdentityProvider>(
+    `/orgs/${encodeURIComponent(orgId)}/sso/idp`,
+    { method: 'PUT', body: JSON.stringify(body) },
+  );
+}
+
+export function testSsoIdp(orgId = DEFAULT_ORG) {
+  return api<TestIdpResponse>(
+    `/orgs/${encodeURIComponent(orgId)}/sso/idp/test`,
+    { method: 'POST', body: '{}' },
+  );
+}
+
+export function revokeSsoIdp(orgId = DEFAULT_ORG) {
+  return api<OrgIdentityProvider>(
+    `/orgs/${encodeURIComponent(orgId)}/sso/idp/revoke`,
+    { method: 'POST', body: '{}' },
+  );
+}
+
+export function listSsoMembers(orgId = DEFAULT_ORG) {
+  return api<OrgMember[]>(
+    `/orgs/${encodeURIComponent(orgId)}/sso/members`,
+  );
+}
+
+export function updateSsoMemberRole(
+  orgId: string,
+  memberId: string,
+  role: OrgMemberRole,
+) {
+  return api<OrgMember>(
+    `/orgs/${encodeURIComponent(orgId)}/sso/members/${encodeURIComponent(memberId)}`,
+    { method: 'PATCH', body: JSON.stringify({ role }) },
+  );
 }

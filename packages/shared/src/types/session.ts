@@ -2,7 +2,8 @@
 export interface SessionUser {
   id: string;
   email: string;
-  role: 'owner' | 'contributor' | 'viewer';
+  /** CDC: owner|admin|member|viewer (SSO default = member). */
+  role: 'owner' | 'admin' | 'member' | 'viewer';
 }
 
 /** Org saisie à l'Étape 1/2 onboarding (mirror of orgs row fields). */
