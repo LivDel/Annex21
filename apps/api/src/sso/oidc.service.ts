@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Issuer, generators, type Client } from 'openid-client';
 import { randomBytes } from 'crypto';
 import { RedisService } from '../session/redis.service';
 import { decryptIdpSecret } from './idp-secrets.crypto';
+import { DOMAIN_STORE, type DomainStore } from '../store/domain-store';
 
 const STATE_PREFIX = 'sso_oidc:';
 const STATE_TTL = 10 * 60;
@@ -25,7 +26,10 @@ export interface OidcCallbackResult {
 export class OidcService {
   private readonly logger = new Logger(OidcService.name);
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    @Inject(DOMAIN_STORE) private readonly store: DomainStore,
+  ) {}
 
   async start(input: {
     idpId: string;
@@ -43,6 +47,7 @@ export class OidcService {
     const codeVerifier = generators.codeVerifier();
     const codeChallenge = generators.codeChallenge(codeVerifier);
 
+    // Never store clientSecretEnc / plaintext secrets in Redis OIDC state
     await this.redis.set(
       `${STATE_PREFIX}${state}`,
       JSON.stringify({
@@ -54,7 +59,6 @@ export class OidcService {
         redirectUri: input.redirectUri,
         issuer: input.issuer,
         clientId: input.clientId,
-        clientSecretEnc: input.clientSecretEnc,
         provider: input.provider,
       }),
       STATE_TTL,
@@ -102,7 +106,6 @@ export class OidcService {
       redirectUri: string;
       issuer: string;
       clientId: string;
-      clientSecretEnc: string;
       provider: 'entra' | 'google' | 'saml';
     };
     try {
@@ -112,10 +115,17 @@ export class OidcService {
     }
 
     try {
+      const idp = await this.store.getIdpById(saved.idpId);
+      if (!idp?.clientSecretEnc) {
+        throw Object.assign(new Error('config_incomplete'), {
+          code: 'config_incomplete',
+        });
+      }
+
       const client = await this.buildClient({
         issuer: saved.issuer,
         clientId: saved.clientId,
-        clientSecretEnc: saved.clientSecretEnc,
+        clientSecretEnc: idp.clientSecretEnc,
         redirectUri: saved.redirectUri,
         provider: saved.provider,
         idpId: saved.idpId,
@@ -156,7 +166,13 @@ export class OidcService {
       };
     } catch (err) {
       const code = (err as { code?: string }).code;
-      if (code === 'oidc_claims' || code === 'access_denied') throw err;
+      if (
+        code === 'oidc_claims' ||
+        code === 'access_denied' ||
+        code === 'config_incomplete'
+      ) {
+        throw err;
+      }
       this.logger.warn(`OIDC callback failed: ${String(err)}`);
       throw Object.assign(new Error('oidc_exchange'), { code: 'oidc_exchange' });
     }
