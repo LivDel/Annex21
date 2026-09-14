@@ -76,6 +76,28 @@ export function SsoWizard() {
     if (revokeOpen) cancelRef.current?.focus();
   }, [revokeOpen]);
 
+  function onRevokeDialogKeyDown(ev: KeyboardEvent<HTMLDivElement>) {
+    if (ev.key === 'Escape') {
+      ev.preventDefault();
+      setRevokeOpen(false);
+      return;
+    }
+    if (ev.key !== 'Tab') return;
+    const cancel = cancelRef.current;
+    const confirm = revokeConfirmRef.current;
+    if (!cancel || !confirm) return;
+    // Focus trap: Annuler ↔ Révoquer only
+    ev.preventDefault();
+    if (ev.shiftKey) {
+      if (document.activeElement === cancel) confirm.focus();
+      else cancel.focus();
+    } else if (document.activeElement === confirm) {
+      cancel.focus();
+    } else {
+      confirm.focus();
+    }
+  }
+
   function validateActiveMode(): boolean {
     const next: Record<string, string> = {};
     if (mode === 'oidc') {
