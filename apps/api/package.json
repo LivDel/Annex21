@@ -10,7 +10,8 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist",
     "migrate": "tsx scripts/migrate.ts",
-    "migrate:sql": "echo Use: psql \\$DATABASE_URL -f ../../infra/migrations/001_assessment_playbooks.sql"
+    "migrate:sql": "echo Use: psql \\\$DATABASE_URL -f ../../infra/migrations/001_assessment_playbooks.sql",
+    "smoke:billing-webhooks": "tsx scripts/smoke-billing-webhooks.ts"
   },
   "dependencies": {
     "@annex21/shared": "workspace:*",
