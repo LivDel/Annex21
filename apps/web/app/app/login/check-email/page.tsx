@@ -75,7 +75,7 @@ function CheckEmailInner() {
         <p className="mt-3 text-sm leading-relaxed text-[#CBD5E1]">
           Un lien magique a été envoyé à{' '}
           <span className="font-medium text-[#F8FAFC]">{email || 'cet e-mail'}</span>.
-          Ouvrez-le pour vous connecter — aucun mot de passe, pas de SSO.
+          Ouvrez-le pour vous connecter — aucun mot de passe (SSO IdP aussi disponible au login).
         </p>
 
         <form onSubmit={onResend} className="mt-7">
