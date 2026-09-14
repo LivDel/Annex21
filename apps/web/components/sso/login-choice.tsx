@@ -151,7 +151,7 @@ export function LoginChoice() {
       </div>
       <p className="mt-4 text-[10px] text-[#CBD5E1]/50">
         {emptyIdp
-          ? 'Focus-visible · Tab e-mail → Continuer · Esc non applicable'
+          ? 'Focus-visible · Tab e-mail → Recevoir un lien magique · Esc non applicable'
           : 'Focus-visible · Tab entre IdP et lien magique'}
       </p>
     </div>
