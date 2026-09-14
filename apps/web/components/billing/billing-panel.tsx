@@ -106,9 +106,13 @@ export function BillingPanel() {
     !isActive &&
     !isPending &&
     (!hasSub || isCanceled);
+  // canceled → empty soft (Figma 28:2): reuse empty CTA, no harsh canceled card
   const isEmpty =
-    !hasSub && !showDevis && !isPastDue && !isActive && !isPending;
-  const showCanceledCard = isCanceled && hasSub && !showDevis;
+    (!hasSub || isCanceled) &&
+    !showDevis &&
+    !isPastDue &&
+    !isActive &&
+    !isPending;
 
   return (
     <div className="relative space-y-6" data-luix-frame="billing-panel">
@@ -130,6 +134,7 @@ export function BillingPanel() {
           <div
             className="card-glass mx-auto max-w-lg rounded-2xl border border-white/10 px-8 py-10 text-center"
             data-luix-frame="billing-empty"
+            data-billing-soft={isCanceled ? 'canceled-empty' : 'empty'}
           >
             <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-[#1d4ed8]/25 ring-1 ring-[#1d4ed8]/40">
               <span className="text-sm font-bold text-[#93c5fd]">€</span>
@@ -573,39 +578,6 @@ export function BillingPanel() {
         </>
       ) : null}
 
-      {showCanceledCard && data ? (
-        <>
-          <header className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold text-white">Facturation</h1>
-            <BillingStatusBadge status="canceled" />
-          </header>
-          <div className="card-glass rounded-2xl border border-white/10 px-6 py-8">
-            <p className="text-base font-medium text-white">
-              Abonnement annulé
-            </p>
-            <p className="mt-2 text-sm text-[#CBD5E1]">
-              Vous pouvez souscrire à nouveau via un devis sales-led (ACV
-              10–30&nbsp;k€/an).
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setShowDevis(true)}
-                className="rounded-lg bg-[#1d4ed8] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#1e40af] disabled:opacity-50"
-              >
-                Souscrire à nouveau
-              </button>
-              <a
-                href={SALES_MAIL}
-                className="rounded-lg border border-white/20 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/5"
-              >
-                Contacter les ventes
-              </a>
-            </div>
-          </div>
-        </>
-      ) : null}
 
     </div>
   );
