@@ -30,7 +30,7 @@ const SEVERITY_FR: Record<string, string> = {
 const SEVERITY_CLS: Record<string, string> = {
   eleve: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
   moyen: 'bg-orange-400/15 text-orange-200 border-orange-400/30',
-  faible: 'bg-annex-mint/15 text-annex-mint border-annex-mint/30',
+  faible: 'bg-annex-mint/15 text-annex-mint border-annex-mint/50',
 };
 
 const SCOPE_FR: Record<string, string> = {

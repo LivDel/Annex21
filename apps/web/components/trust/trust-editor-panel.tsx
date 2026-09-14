@@ -163,7 +163,7 @@ export function TrustEditorPanel({ orgSlug = DEFAULT_TRUST_SLUG }: { orgSlug?: s
       {isPublished ? (
         <div
           role="status"
-          className="mb-6 rounded-xl border border-annex-mint/40 bg-annex-mint px-4 py-3 text-center text-sm font-bold tracking-wide text-navy shadow-[0_0_40px_rgba(16,185,129,0.25)]"
+          className="mb-6 rounded-xl border border-annex-mint/60 bg-annex-mint px-4 py-3 text-center text-sm font-bold tracking-wide text-navy shadow-[0_0_40px_rgba(16,185,129,0.25)]"
         >
           Publié — visible sur /trust/{trust.org.slug}
         </div>
@@ -181,7 +181,7 @@ export function TrustEditorPanel({ orgSlug = DEFAULT_TRUST_SLUG }: { orgSlug?: s
           role="status"
           className={`fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm shadow-lg ${
             toast.kind === 'ok'
-              ? 'border-annex-mint/40 bg-navy text-white'
+              ? 'border-annex-mint/60 bg-navy text-white'
               : 'border-rose-400/40 bg-navy text-rose-200'
           }`}
           data-luix-frame="03-modal-publish-toast"

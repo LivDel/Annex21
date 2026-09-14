@@ -86,7 +86,7 @@ export default async function PublicTrustPage({
               <span className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white">
                 Attestations à venir
               </span>
-              <span className="rounded-full border border-annex-mint/30 px-3 py-1.5 text-xs text-annex-mint">
+              <span className="rounded-full border border-annex-mint/50 px-3 py-1.5 text-xs text-annex-mint">
                 Zéro evidence brute
               </span>
             </div>
@@ -158,7 +158,7 @@ export default async function PublicTrustPage({
             )}
           </section>
 
-          <section className="card-glass rounded-2xl border border-annex-mint/20 p-6">
+          <section className="card-glass rounded-2xl border border-annex-mint/50 p-6">
             <h2 className="text-sm font-semibold text-annex-mint">
               Surface publique
             </h2>

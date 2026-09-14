@@ -25,7 +25,7 @@ export default function LandingPage() {
         </nav>
         <Link
           href="/app/assessment"
-          className="rounded-full border border-annex-mint/40 bg-transparent px-4 py-1.5 text-sm font-medium text-annex-mint hover:bg-annex-mint/10"
+          className="rounded-full border border-annex-mint/60 bg-transparent px-4 py-1.5 text-sm font-medium text-annex-mint hover:bg-annex-mint/10"
         >
           Lancer l&apos;assessment
         </Link>
