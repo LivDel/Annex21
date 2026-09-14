@@ -6,12 +6,12 @@ export const metadata = { title: 'Contrôle' };
 export default async function ControlDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const resolved = await Promise.resolve(params);
+  const { id } = await params;
   return (
     <AppShell active="/app/controls">
-      <ControlDetailPanel id={resolved.id} />
+      <ControlDetailPanel id={id} />
     </AppShell>
   );
 }

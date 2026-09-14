@@ -2,12 +2,14 @@ import type {
   AssessmentAnswers,
   AssessmentGap,
   AuditEvent,
+  BillingStatus,
   Control,
   Incident,
   IncidentStep,
   IncidentStepEvidenceLink,
   Nis2Assessment,
   Nis2Domain,
+  OrgBilling,
   PlaybookTemplate,
   PlaybookTemplateBody,
   ScopeStatus,
@@ -125,6 +127,25 @@ function mapTrust(r: Record<string, unknown>): TrustCenterView {
     updatedAt: r.updated_at
       ? new Date(String(r.updated_at)).toISOString()
       : undefined,
+  };
+}
+
+
+function mapBilling(r: Record<string, unknown>): OrgBilling {
+  const stripeSubscriptionId = r.stripe_subscription_id
+    ? String(r.stripe_subscription_id)
+    : null;
+  return {
+    orgId: String(r.id),
+    status: (r.billing_status as BillingStatus) || 'pending',
+    stripeCustomerId: r.stripe_customer_id
+      ? String(r.stripe_customer_id)
+      : null,
+    stripeSubscriptionId,
+    hasSubscription: Boolean(stripeSubscriptionId),
+    updatedAt: r.billing_updated_at
+      ? new Date(String(r.billing_updated_at)).toISOString()
+      : null,
   };
 }
 
@@ -549,5 +570,87 @@ export class PostgresDomainStore implements DomainStore {
           [limit],
         );
     return res.rows.map((r) => mapAudit(r as Record<string, unknown>));
+  }
+
+  async getBilling(orgId: string): Promise<OrgBilling | null> {
+    const res = await this.pg.query(
+      `SELECT id, billing_status, stripe_customer_id, stripe_subscription_id, billing_updated_at
+         FROM orgs WHERE id = $1`,
+      [orgId],
+    );
+    if (!res.rows[0]) return null;
+    return mapBilling(res.rows[0] as Record<string, unknown>);
+  }
+
+  async upsertBilling(
+    orgId: string,
+    patch: {
+      status?: BillingStatus;
+      stripeCustomerId?: string | null;
+      stripeSubscriptionId?: string | null;
+    },
+  ): Promise<OrgBilling> {
+    const res = await this.pg.query(
+      `UPDATE orgs SET
+         billing_status = COALESCE($2, billing_status),
+         stripe_customer_id = CASE
+           WHEN $3::boolean THEN $4
+           ELSE stripe_customer_id
+         END,
+         stripe_subscription_id = CASE
+           WHEN $5::boolean THEN $6
+           ELSE stripe_subscription_id
+         END,
+         billing_updated_at = NOW(),
+         updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, billing_status, stripe_customer_id, stripe_subscription_id, billing_updated_at`,
+      [
+        orgId,
+        patch.status ?? null,
+        patch.stripeCustomerId !== undefined,
+        patch.stripeCustomerId !== undefined ? patch.stripeCustomerId : null,
+        patch.stripeSubscriptionId !== undefined,
+        patch.stripeSubscriptionId !== undefined
+          ? patch.stripeSubscriptionId
+          : null,
+      ],
+    );
+    if (res.rows[0]) {
+      return mapBilling(res.rows[0] as Record<string, unknown>);
+    }
+    // Org row missing (dev edge): return ephemeral snapshot without inventing slug conflicts.
+    const stripeSubscriptionId = patch.stripeSubscriptionId ?? null;
+    return {
+      orgId,
+      status: patch.status ?? 'pending',
+      stripeCustomerId: patch.stripeCustomerId ?? null,
+      stripeSubscriptionId,
+      hasSubscription: Boolean(stripeSubscriptionId),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async findOrgIdByStripeCustomer(customerId: string): Promise<string | null> {
+    const res = await this.pg.query(
+      `SELECT id FROM orgs WHERE stripe_customer_id = $1 LIMIT 1`,
+      [customerId],
+    );
+    return res.rows[0] ? String(res.rows[0].id) : null;
+  }
+
+  async claimWebhookEvent(
+    eventId: string,
+    eventType: string,
+    orgId?: string | null,
+  ): Promise<boolean> {
+    const res = await this.pg.query(
+      `INSERT INTO stripe_webhook_events (id, event_type, org_id)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
+      [eventId, eventType, orgId ?? null],
+    );
+    return Boolean(res.rows[0]);
   }
 }
