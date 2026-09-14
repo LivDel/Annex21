@@ -1,1 +1,1 @@
-PLACEHOLDER_LOAD_FROM_FILE
+LOAD_FROM_/workspace/TO_PUSH_sso-wizard.tsx
