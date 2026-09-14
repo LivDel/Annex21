@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Colors use channel + <alpha-value> so utilities like border-annex-mint/40 work
+ * Colors use channel + <alpha-value> so utilities like border-annex-mint/60 work
  * (plain CSS variables cannot be opacity-modified by Tailwind @apply / JIT).
  */
 const config: Config = {

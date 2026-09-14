@@ -38,7 +38,7 @@ export function TrustPublicOfflinePill() {
 
 export function TrustReadOnlyPublicPill() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-annex-mint/40 px-2.5 py-0.5 text-[11px] font-medium text-annex-mint">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-annex-mint/60 px-2.5 py-0.5 text-[11px] font-medium text-annex-mint">
       <span className="h-1.5 w-1.5 rounded-full bg-annex-mint" />
       Lecture seule · Public
     </span>
