@@ -32,8 +32,15 @@ export class SsoAuthController {
 
   /** Login choice — configured IdPs + magic link flag. */
   @Get('options')
-  options() {
-    return this.sso.loginOptions();
+  async options() {
+    const res = await this.sso.loginOptions();
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        ...res,
+        options: res.options.filter((o) => !o.idpId.startsWith('preset_')),
+      };
+    }
+    return res;
   }
 
   /** OIDC start — Entra / Google. */
@@ -45,6 +52,9 @@ export class SsoAuthController {
     @Res() res: Response,
   ) {
     try {
+      if (process.env.NODE_ENV === 'production' && provider && !idpId) {
+        return res.redirect(302, this.sso.callbackErrorRedirect('idp_not_found'));
+      }
       const { authorizationUrl } = await this.sso.startOidc({
         idpId,
         provider,
