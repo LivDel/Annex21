@@ -21,4 +21,5 @@ export interface Organization {
   billingUpdatedAt?: string | null;
 }
 
-export type MembershipRole = 'owner' | 'contributor' | 'viewer' | 'external';
+/** CDC org roles + external buyer. SSO uses OrgMemberRole (no contributor). */
+export type MembershipRole = 'owner' | 'admin' | 'member' | 'viewer' | 'external';
