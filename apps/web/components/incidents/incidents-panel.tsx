@@ -53,7 +53,7 @@ function StepEvidenceBlock({
           return (
             <div
               key={l.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-annex-mint/30 bg-annex-mint/10 px-3 py-2 text-xs text-annex-mint"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-annex-mint/50 bg-annex-mint/10 px-3 py-2 text-xs text-annex-mint"
               data-luix-frame="07-evidence-linked"
               data-figma-node="14:279"
             >
@@ -67,7 +67,7 @@ function StepEvidenceBlock({
           );
         })}
         <div className="flex justify-end">
-          <span className="rounded-full border border-annex-mint/30 bg-annex-mint/15 px-3 py-1 text-xs font-semibold text-annex-mint">
+          <span className="rounded-full border border-annex-mint/50 bg-annex-mint/15 px-3 py-1 text-xs font-semibold text-annex-mint">
             Fait
           </span>
         </div>
@@ -84,7 +84,7 @@ function StepEvidenceBlock({
           return (
             <div
               key={l.id}
-              className="rounded-xl border border-annex-mint/40 border-t-2 bg-white/5 px-3 py-2"
+              className="rounded-xl border border-annex-mint/60 border-t-2 bg-white/5 px-3 py-2"
             >
               <span className="rounded-full bg-annex-mint/20 px-2 py-0.5 text-[10px] font-semibold text-annex-mint">
                 Liée
