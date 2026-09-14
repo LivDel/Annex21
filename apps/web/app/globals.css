@@ -91,7 +91,7 @@ body {
 }
 
 .status-attested {
-  @apply text-annex-mint border-annex-mint/40 bg-annex-mint/10;
+  @apply text-annex-mint border-annex-mint/60 bg-annex-mint/10;
 }
 
 .status-progress {
