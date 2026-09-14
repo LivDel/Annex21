@@ -138,7 +138,7 @@ export default function OnboardingOrgPage() {
     <div className="surface-void flex min-h-screen flex-col items-center justify-center px-4 py-10">
       <Logo href="/" mark />
       <div className="card-glass mt-8 w-full max-w-lg rounded-2xl p-8">
-        <span className="inline-flex rounded-full border border-annex-mint/40 bg-annex-mint/15 px-2.5 py-0.5 text-[11px] font-semibold text-annex-mint">
+        <span className="inline-flex rounded-full border border-annex-mint/60 bg-annex-mint/15 px-2.5 py-0.5 text-[11px] font-semibold text-annex-mint">
           Étape 1/2 — Organisation
         </span>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight text-[#F8FAFC]">
